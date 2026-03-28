@@ -15,6 +15,7 @@ module.exports = [
         ...globals.browser,
         ...globals.es2022,
         ...globals.jasmine,
+        ...globals.node,
       },
     },
     plugins: {

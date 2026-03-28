@@ -1,0 +1,67 @@
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Elke maandag om 06:00
+  push:
+    branches: [main, master]
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high
+
+      - name: Snyk vulnerability scan
+        uses: snyk/actions/node@master
+        continue-on-error: true   # Niet blokkeren — rapporteren
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  owasp-zap:
+    name: OWASP ZAP Security Scan
+    runs-on: ubuntu-latest
+    # Alleen op schema (niet bij elke push — kost tijd)
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npx ng build --configuration production
+
+      - name: Start app
+        run: npx ng serve --configuration production &
+
+      - name: Wait for app to start
+        run: npx wait-on http://localhost:4200 --timeout 60000
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:4200'
+          fail_action: false   # Rapporteren — niet blokkeren
+          artifact_name: zap-report
