@@ -1,0 +1,23 @@
+{
+  "name": "@siwait-dev/siwa-ui",
+  "version": "0.1.0",
+  "description": "SiwaUI - Angular frontend framework foundation with auth, theming, logging, state management and realtime support.",
+  "author": "SiwaCore",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/siwait-dev/SiwaUI"
+  },
+  "peerDependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@microsoft/signalr": "^10.0.0",
+    "@ngrx/signals": "^21.1.0",
+    "keycloak-js": "^26.0.0",
+    "primeng": "^21.0.0",
+    "rxjs": "~7.8.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}

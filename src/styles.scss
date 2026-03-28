@@ -1,1 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// PrimeNG theme
+@import 'primeicons/primeicons.css';
+
+// CSS custom properties voor SiwaUI theming
+:root {
+  --siwa-sidebar-width: 260px;
+  --siwa-topbar-height: 64px;
+  --siwa-transition: 0.2s ease;
+}
+
+// Layout: sidebar
+[data-layout='sidebar'] {
+  .siwa-layout {
+    display: flex;
+  }
+  .siwa-sidebar {
+    width: var(--siwa-sidebar-width);
+    min-height: 100vh;
+  }
+  .siwa-content {
+    flex: 1;
+    padding: 1.5rem;
+  }
+}
+
+// Layout: topbar
+[data-layout='topbar'] {
+  .siwa-topbar {
+    height: var(--siwa-topbar-height);
+  }
+  .siwa-content {
+    padding: 1.5rem;
+  }
+}
+
+// Dark mode
+html.dark {
+  color-scheme: dark;
+}

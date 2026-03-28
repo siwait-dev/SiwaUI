@@ -11,6 +11,9 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "experimentalDecorators": true,
+    "paths": {
+      "siwa-ui": ["./dist/siwa-ui"]
+    },
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve"
@@ -28,6 +31,12 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/siwa-ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/siwa-ui/tsconfig.spec.json"
     }
   ]
 }
