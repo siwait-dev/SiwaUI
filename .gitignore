@@ -46,5 +46,9 @@ Thumbs.db
 # Claude Code
 .claude/
 
+# Playwright
+playwright-report/
+test-results/
+
 # Environment files met secrets
 src/environments/environment.local.ts
