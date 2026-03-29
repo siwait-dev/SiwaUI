@@ -10,6 +10,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (req.url.includes('/logs/client')) {
+        return throwError(() => error);
+      }
+
       const apiError = error.error;
       const message = apiError?.message ?? error.message;
       const code = apiError?.code ?? 'UNKNOWN_ERROR';

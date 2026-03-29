@@ -1,13 +1,53 @@
-import { Component } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
-import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
-import { SelectModule } from 'primeng/select';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { ApiService } from '../../../core/services/api.service';
+import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
+
+interface ClientLogDto {
+  id: number;
+  level: string;
+  message: string;
+  stackTrace?: string;
+  url: string;
+  userAgent?: string;
+  userId?: string;
+  correlationId?: string;
+  timestamp: string;
+  actionTrail?: string;
+  context?: string;
+}
+
+interface ClientLogPagedResponse {
+  items: ClientLogDto[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
 
 @Component({
   selector: 'app-log-viewer',
-  imports: [TranslateModule, CardModule, TableModule, SelectModule, FormsModule],
+  standalone: true,
+  imports: [
+    TranslateModule,
+    CardModule,
+    TableModule,
+    SelectModule,
+    FormsModule,
+    TagModule,
+    DialogModule,
+    ButtonModule,
+    InputTextModule,
+    SiwaDatePipe,
+  ],
   template: `
     <div class="flex flex-col gap-6">
       <h1 class="text-2xl font-bold">{{ 'LOG_VIEWER.TITLE' | translate }}</h1>
@@ -19,23 +59,89 @@ import { FormsModule } from '@angular/forms';
             [(ngModel)]="selectedLevel"
             [placeholder]="'LOG_VIEWER.LEVEL_PLACEHOLDER' | translate"
             [showClear]="true"
+            (ngModelChange)="reload()"
             class="w-44"
+          />
+          <input
+            pInputText
+            [(ngModel)]="filterUserId"
+            [placeholder]="'LOG_VIEWER.FILTER_USER' | translate"
+            (keyup.enter)="reload()"
+            class="w-48"
+          />
+          <input
+            pInputText
+            [(ngModel)]="filterCorrelationId"
+            [placeholder]="'LOG_VIEWER.FILTER_CORRELATION' | translate"
+            (keyup.enter)="reload()"
+            class="w-56"
+          />
+          <input
+            type="datetime-local"
+            [(ngModel)]="filterFrom"
+            (change)="reload()"
+            class="rounded-md border border-surface-300 bg-transparent px-3 py-2 text-sm dark:border-surface-700"
+          />
+          <input
+            type="datetime-local"
+            [(ngModel)]="filterTo"
+            (change)="reload()"
+            class="rounded-md border border-surface-300 bg-transparent px-3 py-2 text-sm dark:border-surface-700"
+          />
+          <p-button
+            [label]="'LOG_VIEWER.CLEAR_FILTERS' | translate"
+            icon="pi pi-filter-slash"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="clearFilters()"
           />
         </div>
 
-        <p-table [value]="[]" [paginator]="true" [rows]="50">
+        <p-table
+          [value]="logs()"
+          [lazy]="true"
+          [paginator]="true"
+          [rows]="pageSize"
+          [totalRecords]="totalCount()"
+          [loading]="loading()"
+          (onLazyLoad)="onLazyLoad($event)"
+        >
           <ng-template pTemplate="header">
             <tr>
               <th>{{ 'LOG_VIEWER.COL_TIMESTAMP' | translate }}</th>
               <th>{{ 'LOG_VIEWER.COL_LEVEL' | translate }}</th>
               <th>{{ 'LOG_VIEWER.COL_MESSAGE' | translate }}</th>
               <th>{{ 'LOG_VIEWER.COL_USER' | translate }}</th>
+              <th>{{ 'LOG_VIEWER.COL_CORRELATION' | translate }}</th>
               <th>{{ 'LOG_VIEWER.COL_URL' | translate }}</th>
+              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-log>
+            <tr>
+              <td class="text-sm whitespace-nowrap">{{ log.timestamp | siwaDate: 'dateTime' }}</td>
+              <td>
+                <p-tag [value]="log.level" [severity]="levelSeverity(log.level)" />
+              </td>
+              <td class="max-w-md truncate text-sm">{{ log.message }}</td>
+              <td class="text-sm">{{ log.userId ?? '—' }}</td>
+              <td class="font-mono text-sm max-w-xs truncate">{{ log.correlationId ?? '—' }}</td>
+              <td class="font-mono text-sm max-w-xs truncate">{{ log.url }}</td>
+              <td>
+                <p-button
+                  [label]="'LOG_VIEWER.DETAILS' | translate"
+                  icon="pi pi-eye"
+                  severity="secondary"
+                  size="small"
+                  [outlined]="true"
+                  (onClick)="openDetails(log)"
+                />
+              </td>
             </tr>
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="5" class="text-center py-6 text-surface-500">
+              <td colspan="7" class="text-center py-6 text-surface-500">
                 {{ 'LOG_VIEWER.EMPTY' | translate }}
               </td>
             </tr>
@@ -43,16 +149,189 @@ import { FormsModule } from '@angular/forms';
         </p-table>
       </p-card>
     </div>
+
+    <p-dialog
+      [(visible)]="detailsDialogVisible"
+      [header]="'LOG_VIEWER.DETAILS_DIALOG_TITLE' | translate"
+      [modal]="true"
+      [style]="{ width: '760px' }"
+    >
+      @if (selectedLog()) {
+        <div class="flex flex-col gap-4">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_TIMESTAMP' | translate
+              }}</span>
+              <span>{{ selectedLog()!.timestamp | siwaDate: 'dateTime' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_LEVEL' | translate }}</span>
+              <p-tag
+                [value]="selectedLog()!.level"
+                [severity]="levelSeverity(selectedLog()!.level)"
+              />
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_MESSAGE' | translate
+              }}</span>
+              <span>{{ selectedLog()!.message }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_USER' | translate }}</span>
+              <span>{{ selectedLog()!.userId ?? '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_CORRELATION' | translate
+              }}</span>
+              <span class="font-mono text-sm">{{ selectedLog()!.correlationId ?? '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_URL' | translate }}</span>
+              <span class="font-mono text-sm break-all">{{ selectedLog()!.url }}</span>
+            </div>
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_USER_AGENT' | translate
+              }}</span>
+              <span class="text-sm break-all">{{ selectedLog()!.userAgent ?? '—' }}</span>
+            </div>
+          </div>
+
+          @if (selectedLog()!.actionTrail) {
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_ACTION_TRAIL' | translate
+              }}</span>
+              <pre
+                class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"
+                >{{ selectedLog()!.actionTrail }}</pre
+              >
+            </div>
+          }
+
+          @if (selectedLog()!.context) {
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_CONTEXT' | translate
+              }}</span>
+              <pre
+                class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"
+                >{{ selectedLog()!.context }}</pre
+              >
+            </div>
+          }
+
+          @if (selectedLog()!.stackTrace) {
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500">{{
+                'LOG_VIEWER.COL_STACKTRACE' | translate
+              }}</span>
+              <pre
+                class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"
+                >{{ selectedLog()!.stackTrace }}</pre
+              >
+            </div>
+          }
+        </div>
+      }
+      <ng-template pTemplate="footer">
+        <p-button
+          [label]="'COMMON.CLOSE' | translate"
+          severity="secondary"
+          (onClick)="detailsDialogVisible = false"
+        />
+      </ng-template>
+    </p-dialog>
   `,
 })
-export class LogViewerComponent {
-  selectedLevel: string | null = null;
+export class LogViewerComponent implements OnInit {
+  private readonly api = inject(ApiService);
+
+  protected readonly logs = signal<ClientLogDto[]>([]);
+  protected readonly totalCount = signal(0);
+  protected readonly loading = signal(true);
+  protected readonly selectedLog = signal<ClientLogDto | null>(null);
+
+  protected selectedLevel: string | null = null;
+  protected filterUserId = '';
+  protected filterCorrelationId = '';
+  protected filterFrom = '';
+  protected filterTo = '';
+  protected detailsDialogVisible = false;
+  protected pageSize = 50;
 
   readonly levelOptions = [
-    { label: 'LOG_VIEWER.LEVEL_DEBUG', value: 'debug' },
-    { label: 'LOG_VIEWER.LEVEL_INFO', value: 'info' },
-    { label: 'LOG_VIEWER.LEVEL_WARN', value: 'warn' },
-    { label: 'LOG_VIEWER.LEVEL_ERROR', value: 'error' },
-    { label: 'LOG_VIEWER.LEVEL_CRITICAL', value: 'critical' },
+    { label: 'Debug', value: 'debug' },
+    { label: 'Info', value: 'info' },
+    { label: 'Warning', value: 'warn' },
+    { label: 'Error', value: 'error' },
+    { label: 'Critical', value: 'critical' },
   ];
+
+  ngOnInit(): void {
+    this.fetchLogs(1);
+  }
+
+  protected onLazyLoad(event: TableLazyLoadEvent): void {
+    const page = event.first !== undefined ? Math.floor(event.first / this.pageSize) + 1 : 1;
+    this.fetchLogs(page);
+  }
+
+  protected reload(): void {
+    this.fetchLogs(1);
+  }
+
+  protected clearFilters(): void {
+    this.selectedLevel = null;
+    this.filterUserId = '';
+    this.filterCorrelationId = '';
+    this.filterFrom = '';
+    this.filterTo = '';
+    this.fetchLogs(1);
+  }
+
+  protected openDetails(log: ClientLogDto): void {
+    this.selectedLog.set(log);
+    this.detailsDialogVisible = true;
+  }
+
+  private fetchLogs(page: number): void {
+    this.loading.set(true);
+    const params: Record<string, string | number | boolean> = { page, pageSize: this.pageSize };
+    if (this.selectedLevel) params['level'] = this.selectedLevel;
+    if (this.filterUserId) params['userId'] = this.filterUserId;
+    if (this.filterCorrelationId) params['correlationId'] = this.filterCorrelationId;
+    if (this.filterFrom) params['from'] = new Date(this.filterFrom).toISOString();
+    if (this.filterTo) params['to'] = new Date(this.filterTo).toISOString();
+
+    this.api.get<ClientLogPagedResponse>('logs/client', params).subscribe({
+      next: res => {
+        this.logs.set(res.items);
+        this.totalCount.set(res.totalCount);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  protected levelSeverity(level: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    switch (level.toLowerCase()) {
+      case 'debug':
+        return 'secondary';
+      case 'info':
+        return 'info';
+      case 'warn':
+      case 'warning':
+        return 'warn';
+      case 'error':
+        return 'danger';
+      case 'critical':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  }
 }
