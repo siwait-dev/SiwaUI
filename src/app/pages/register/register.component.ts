@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -23,16 +23,18 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
     PasswordModule,
   ],
   template: `
-    <p-card [header]="'REGISTER.TITLE' | translate">
+    <p-card [header]="'USER.REGISTER.TITLE' | translate">
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
         <!-- Voornaam -->
         <div class="flex flex-col gap-1">
-          <label for="firstName" class="font-medium">{{ 'REGISTER.FIRST_NAME' | translate }}</label>
+          <label for="firstName" class="font-medium">{{
+            'USER.REGISTER.FIRST_NAME' | translate
+          }}</label>
           <input
             id="firstName"
             pInputText
             formControlName="firstName"
-            [placeholder]="'REGISTER.FIRST_NAME_PLACEHOLDER' | translate"
+            [placeholder]="'USER.REGISTER.FIRST_NAME_PLACEHOLDER' | translate"
             [invalid]="isInvalid('firstName')"
             class="w-full"
           />
@@ -43,12 +45,14 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
 
         <!-- Achternaam -->
         <div class="flex flex-col gap-1">
-          <label for="lastName" class="font-medium">{{ 'REGISTER.LAST_NAME' | translate }}</label>
+          <label for="lastName" class="font-medium">{{
+            'USER.REGISTER.LAST_NAME' | translate
+          }}</label>
           <input
             id="lastName"
             pInputText
             formControlName="lastName"
-            [placeholder]="'REGISTER.LAST_NAME_PLACEHOLDER' | translate"
+            [placeholder]="'USER.REGISTER.LAST_NAME_PLACEHOLDER' | translate"
             [invalid]="isInvalid('lastName')"
             class="w-full"
           />
@@ -65,7 +69,7 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
             pInputText
             type="email"
             formControlName="email"
-            [placeholder]="'REGISTER.EMAIL_PLACEHOLDER' | translate"
+            [placeholder]="'USER.REGISTER.EMAIL_PLACEHOLDER' | translate"
             [invalid]="isInvalid('email')"
             class="w-full"
           />
@@ -83,7 +87,7 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
         <!-- Wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="password" class="font-medium">{{
-            'REGISTER.PASSWORD_LABEL' | translate
+            'USER.REGISTER.PASSWORD_LABEL' | translate
           }}</label>
           <p-password
             inputId="password"
@@ -92,7 +96,7 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
             [toggleMask]="true"
             styleClass="w-full"
             [invalid]="isInvalid('password')"
-            [placeholder]="'REGISTER.PASSWORD_LABEL' | translate"
+            [placeholder]="'USER.REGISTER.PASSWORD_LABEL' | translate"
           />
           @if (isInvalid('password')) {
             @if (form.get('password')?.hasError('required')) {
@@ -119,16 +123,16 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
 
         <p-button
           type="submit"
-          [label]="'REGISTER.SUBMIT' | translate"
+          [label]="'USER.REGISTER.SUBMIT' | translate"
           severity="primary"
           styleClass="w-full"
           [loading]="loading()"
         />
 
         <p class="text-center text-sm">
-          {{ 'REGISTER.ALREADY_ACCOUNT' | translate }}
+          {{ 'USER.REGISTER.ALREADY_ACCOUNT' | translate }}
           <a routerLink="/login" class="text-primary font-medium">
-            {{ 'REGISTER.SIGN_IN' | translate }}
+            {{ 'USER.REGISTER.SIGN_IN' | translate }}
           </a>
         </p>
       </form>

@@ -27,6 +27,14 @@ module.exports = [
       'no-unused-vars': 'off', // TypeScript variant gebruikt
     },
   },
+  {
+    files: ['**/*.spec.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+  },
   prettierConfig,
   {
     ignores: ['dist/**', 'node_modules/**', '.angular/**', 'coverage/**'],

@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -11,6 +11,7 @@ import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ApiService } from '../../../core/services/api.service';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 
 interface RoleClaimsResponse {
   claims: RoleClaimDto[];
@@ -43,9 +44,9 @@ interface RoleClaimDto {
 
     <div class="flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">{{ 'ROLES.TITLE' | translate }}</h1>
+        <h1 class="text-2xl font-bold">{{ 'ADMIN.ROLES.TITLE' | translate }}</h1>
         <p-button
-          [label]="'ROLES.ADD' | translate"
+          [label]="'ADMIN.ROLES.ADD' | translate"
           icon="pi pi-plus"
           severity="primary"
           (onClick)="openCreateDialog()"
@@ -56,7 +57,7 @@ interface RoleClaimDto {
         <p-table [value]="roles()" [loading]="loading()">
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'ROLES.COL_NAME' | translate }}</th>
+              <th>{{ 'ADMIN.ROLES.COL_NAME' | translate }}</th>
               <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </ng-template>
@@ -66,7 +67,7 @@ interface RoleClaimDto {
               <td>
                 <div class="flex gap-2">
                   <p-button
-                    [label]="'ROLES.MANAGE_CLAIMS' | translate"
+                    [label]="'ADMIN.ROLES.MANAGE_CLAIMS' | translate"
                     icon="pi pi-key"
                     severity="secondary"
                     size="small"
@@ -87,7 +88,7 @@ interface RoleClaimDto {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="2" class="text-center py-6 text-surface-500">
-                {{ 'ROLES.EMPTY' | translate }}
+                {{ 'ADMIN.ROLES.EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -97,15 +98,15 @@ interface RoleClaimDto {
 
     <p-dialog
       [(visible)]="createDialogVisible"
-      [header]="'ROLES.CREATE_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.ROLES.CREATE_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '380px' }"
     >
       <div class="flex flex-col gap-3">
-        <label class="font-medium">{{ 'ROLES.NAME_LABEL' | translate }}</label>
+        <label class="font-medium">{{ 'ADMIN.ROLES.NAME_LABEL' | translate }}</label>
         <input pInputText [(ngModel)]="newRoleName" class="w-full" />
         @if (createError()) {
-          <p-message severity="error" [text]="createError()!" styleClass="w-full" />
+          <p-message severity="error" [text]="createError()! | translate" styleClass="w-full" />
         }
       </div>
       <ng-template pTemplate="footer">
@@ -125,7 +126,7 @@ interface RoleClaimDto {
 
     <p-dialog
       [(visible)]="claimsDialogVisible"
-      [header]="'ROLES.CLAIMS_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.ROLES.CLAIMS_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '720px' }"
       (onHide)="resetClaimsDialog()"
@@ -136,7 +137,7 @@ interface RoleClaimDto {
             class="rounded-lg border border-surface-200 bg-surface-50 px-4 py-3 dark:border-surface-700 dark:bg-surface-900/40"
           >
             <p class="text-sm text-surface-500">
-              {{ 'ROLES.SELECTED_ROLE' | translate }}
+              {{ 'ADMIN.ROLES.SELECTED_ROLE' | translate }}
             </p>
             <p class="font-mono text-sm font-semibold">{{ selectedRole() }}</p>
           </div>
@@ -144,18 +145,18 @@ interface RoleClaimDto {
 
         <div class="grid gap-3 md:grid-cols-2">
           <div class="flex flex-col gap-1">
-            <label class="font-medium">{{ 'ROLES.CLAIM_TYPE_LABEL' | translate }}</label>
+            <label class="font-medium">{{ 'ADMIN.ROLES.CLAIM_TYPE_LABEL' | translate }}</label>
             <input pInputText [(ngModel)]="newClaimType" class="w-full" />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="font-medium">{{ 'ROLES.CLAIM_VALUE_LABEL' | translate }}</label>
+            <label class="font-medium">{{ 'ADMIN.ROLES.CLAIM_VALUE_LABEL' | translate }}</label>
             <input pInputText [(ngModel)]="newClaimValue" class="w-full" />
           </div>
         </div>
 
         <div class="flex justify-end">
           <p-button
-            [label]="'ROLES.ADD_CLAIM' | translate"
+            [label]="'ADMIN.ROLES.ADD_CLAIM' | translate"
             icon="pi pi-plus"
             severity="primary"
             [loading]="claimSaving()"
@@ -164,14 +165,14 @@ interface RoleClaimDto {
         </div>
 
         @if (claimsError()) {
-          <p-message severity="error" [text]="claimsError()!" styleClass="w-full" />
+          <p-message severity="error" [text]="claimsError()! | translate" styleClass="w-full" />
         }
 
         <p-table [value]="claims()" [loading]="claimsLoading()">
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'ROLES.CLAIM_TYPE' | translate }}</th>
-              <th>{{ 'ROLES.CLAIM_VALUE' | translate }}</th>
+              <th>{{ 'ADMIN.ROLES.CLAIM_TYPE' | translate }}</th>
+              <th>{{ 'ADMIN.ROLES.CLAIM_VALUE' | translate }}</th>
               <th class="w-24">{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </ng-template>
@@ -194,7 +195,7 @@ interface RoleClaimDto {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="3" class="text-center py-6 text-surface-500">
-                {{ 'ROLES.CLAIMS_EMPTY' | translate }}
+                {{ 'ADMIN.ROLES.CLAIMS_EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -212,8 +213,10 @@ interface RoleClaimDto {
 })
 export class RolesComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly apiError = inject(ApiErrorService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly translate = inject(TranslateService);
 
   protected readonly roles = signal<string[]>([]);
   protected readonly selectedRole = signal<string | null>(null);
@@ -262,19 +265,24 @@ export class RolesComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.createDialogVisible = false;
-        this.messageService.add({ severity: 'success', summary: 'Rol aangemaakt' });
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CREATED'),
+        });
         this.loadRoles();
       },
-      error: () => {
+      error: error => {
         this.saving.set(false);
-        this.createError.set('Aanmaken mislukt.');
+        this.createError.set(
+          this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CREATE_FAILED'),
+        );
       },
     });
   }
 
   protected confirmDelete(role: string): void {
     this.confirmationService.confirm({
-      message: `Rol "${role}" verwijderen?`,
+      message: this.translate.instant('ADMIN.ROLES.CONFIRM_DELETE', { role }),
       accept: () => this.deleteRole(role),
     });
   }
@@ -294,7 +302,7 @@ export class RolesComponent implements OnInit {
     const value = this.newClaimValue.trim();
 
     if (!role || !type || !value) {
-      this.claimsError.set('Vul zowel claim type als claim value in.');
+      this.claimsError.set('ADMIN.ROLES.ERRORS.CLAIM_REQUIRED');
       return;
     }
 
@@ -312,12 +320,17 @@ export class RolesComponent implements OnInit {
           this.claimSaving.set(false);
           this.newClaimType = '';
           this.newClaimValue = '';
-          this.messageService.add({ severity: 'success', summary: 'Claim toegevoegd' });
+          this.messageService.add({
+            severity: 'success',
+            summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CLAIM_ADDED'),
+          });
           this.loadClaims(role);
         },
-        error: () => {
+        error: error => {
           this.claimSaving.set(false);
-          this.claimsError.set('Claim toevoegen mislukt.');
+          this.claimsError.set(
+            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIM_ADD_FAILED'),
+          );
         },
       });
   }
@@ -338,14 +351,19 @@ export class RolesComponent implements OnInit {
       .subscribe({
         next: () => {
           this.deletingClaimKey.set(null);
-          this.messageService.add({ severity: 'success', summary: 'Claim verwijderd' });
+          this.messageService.add({
+            severity: 'success',
+            summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CLAIM_REMOVED'),
+          });
           this.claims.set(
             this.claims().filter(existing => this.claimKey(existing) !== this.claimKey(claim)),
           );
         },
-        error: () => {
+        error: error => {
           this.deletingClaimKey.set(null);
-          this.claimsError.set('Claim verwijderen mislukt.');
+          this.claimsError.set(
+            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIM_REMOVE_FAILED'),
+          );
         },
       });
   }
@@ -353,11 +371,19 @@ export class RolesComponent implements OnInit {
   private deleteRole(role: string): void {
     this.api.delete<unknown>(`roles/${role}`).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Rol verwijderd' });
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant('ADMIN.ROLES.MESSAGES.DELETED'),
+        });
         this.loadRoles();
       },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Verwijderen mislukt' });
+      error: error => {
+        this.messageService.add({
+          severity: 'error',
+          summary: this.translate.instant(
+            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.DELETE_FAILED'),
+          ),
+        });
       },
     });
   }
@@ -386,9 +412,11 @@ export class RolesComponent implements OnInit {
         this.claims.set(res.claims ?? []);
         this.claimsLoading.set(false);
       },
-      error: () => {
+      error: error => {
         this.claimsLoading.set(false);
-        this.claimsError.set('Claims laden mislukt.');
+        this.claimsError.set(
+          this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIMS_LOAD_FAILED'),
+        );
       },
     });
   }

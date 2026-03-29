@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+﻿import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -22,7 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
     PasswordModule,
   ],
   template: `
-    <p-card [header]="'LOGIN.TITLE' | translate">
+    <p-card [header]="'USER.LOGIN.TITLE' | translate">
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
         <!-- E-mailadres -->
         <div class="flex flex-col gap-1">
@@ -32,7 +32,7 @@ import { AuthService } from '../../core/services/auth.service';
             pInputText
             type="email"
             formControlName="email"
-            [placeholder]="'LOGIN.EMAIL_PLACEHOLDER' | translate"
+            [placeholder]="'USER.LOGIN.EMAIL_PLACEHOLDER' | translate"
             [invalid]="isInvalid('email')"
             class="w-full"
           />
@@ -49,7 +49,9 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- Wachtwoord -->
         <div class="flex flex-col gap-1">
-          <label for="password" class="font-medium">{{ 'LOGIN.PASSWORD_LABEL' | translate }}</label>
+          <label for="password" class="font-medium">{{
+            'USER.LOGIN.PASSWORD_LABEL' | translate
+          }}</label>
           <p-password
             inputId="password"
             formControlName="password"
@@ -57,7 +59,7 @@ import { AuthService } from '../../core/services/auth.service';
             [toggleMask]="true"
             styleClass="w-full"
             [invalid]="isInvalid('password')"
-            [placeholder]="'LOGIN.PASSWORD_LABEL' | translate"
+            [placeholder]="'USER.LOGIN.PASSWORD_LABEL' | translate"
           />
           @if (isInvalid('password')) {
             <small class="text-red-500">
@@ -74,7 +76,7 @@ import { AuthService } from '../../core/services/auth.service';
         @if (resetSuccess()) {
           <p-message
             severity="success"
-            [text]="'LOGIN.PASSWORD_RESET_SUCCESS' | translate"
+            [text]="'USER.LOGIN.PASSWORD_RESET_SUCCESS' | translate"
             styleClass="w-full"
           />
         }
@@ -86,21 +88,21 @@ import { AuthService } from '../../core/services/auth.service';
 
         <p-button
           type="submit"
-          [label]="'LOGIN.SUBMIT' | translate"
+          [label]="'USER.LOGIN.SUBMIT' | translate"
           severity="primary"
           styleClass="w-full"
           [loading]="loading()"
         />
 
         <p class="text-center text-sm">
-          {{ 'LOGIN.NO_ACCOUNT' | translate }}
+          {{ 'USER.LOGIN.NO_ACCOUNT' | translate }}
           <a routerLink="/register" class="text-primary font-medium">
-            {{ 'LOGIN.CREATE_ONE' | translate }}
+            {{ 'USER.LOGIN.CREATE_ONE' | translate }}
           </a>
         </p>
         <p class="text-center text-sm">
           <a routerLink="/forgot-password" class="text-surface-500">
-            {{ 'LOGIN.FORGOT_PASSWORD' | translate }}
+            {{ 'USER.LOGIN.FORGOT_PASSWORD' | translate }}
           </a>
         </p>
       </form>

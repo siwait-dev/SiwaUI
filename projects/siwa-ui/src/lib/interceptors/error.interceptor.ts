@@ -4,6 +4,24 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { LoggingService } from '../services/logging.service';
 
+interface ApiErrorMessage {
+  code?: string;
+  message?: string;
+  technicalMessage?: string;
+  statusCode?: number;
+  type?: string;
+}
+
+interface ApiErrorPayload {
+  code?: string;
+  message?: string;
+  error?: {
+    hasError?: boolean;
+    errors?: ApiErrorMessage[];
+  };
+  errors?: ApiErrorMessage[];
+}
+
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const logger = inject(LoggingService);
@@ -14,9 +32,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      const apiError = error.error;
-      const message = apiError?.message ?? error.message;
-      const code = apiError?.code ?? 'UNKNOWN_ERROR';
+      const apiError = (error.error ?? null) as ApiErrorPayload | null;
+      const primaryError: ApiErrorMessage | null =
+        apiError?.error && Array.isArray(apiError.error.errors) && apiError.error.errors.length > 0
+          ? apiError.error.errors[0]
+          : apiError && Array.isArray(apiError.errors) && apiError.errors.length > 0
+            ? apiError.errors[0]
+            : (apiError as ApiErrorMessage | null);
+      const message = primaryError?.message ?? apiError?.message ?? error.message;
+      const code = primaryError?.code ?? apiError?.code ?? 'UNKNOWN_ERROR';
       const correlationId = error.headers.get('X-Correlation-ID') ?? undefined;
 
       logger.error(`[HTTP ${error.status}] ${code}: ${message}`, error, { correlationId });
@@ -37,7 +61,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           break;
       }
 
-      return throwError(() => ({ code, message, status: error.status, correlationId }));
+      return throwError(() => ({
+        code,
+        message,
+        status: primaryError?.statusCode ?? error.status,
+        correlationId,
+        errors: apiError?.error?.errors ?? apiError?.errors,
+      }));
     }),
   );
 };

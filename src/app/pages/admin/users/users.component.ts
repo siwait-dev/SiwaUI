@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -11,6 +11,7 @@ import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ApiService } from '../../../core/services/api.service';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
 
 interface UserDto {
@@ -56,7 +57,7 @@ interface UserRolesResponse {
   template: `
     <div class="flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">{{ 'USERS.TITLE' | translate }}</h1>
+        <h1 class="text-2xl font-bold">{{ 'ADMIN.USERS.TITLE' | translate }}</h1>
       </div>
 
       <p-card>
@@ -65,7 +66,7 @@ interface UserRolesResponse {
             pInputText
             [(ngModel)]="searchValue"
             (ngModelChange)="onSearch()"
-            [placeholder]="'USERS.SEARCH_PLACEHOLDER' | translate"
+            [placeholder]="'ADMIN.USERS.SEARCH_PLACEHOLDER' | translate"
             class="w-full max-w-sm"
           />
           <p-select
@@ -73,7 +74,7 @@ interface UserRolesResponse {
             [optionLabel]="'label'"
             optionValue="value"
             [(ngModel)]="selectedStatus"
-            [placeholder]="'USERS.STATUS_FILTER' | translate"
+            [placeholder]="'ADMIN.USERS.STATUS_FILTER' | translate"
             [showClear]="true"
             (ngModelChange)="onStatusFilterChange()"
             class="w-full md:w-56"
@@ -99,9 +100,9 @@ interface UserRolesResponse {
         >
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'USERS.COL_NAME' | translate }}</th>
-              <th>{{ 'USERS.COL_EMAIL' | translate }}</th>
-              <th>{{ 'USERS.COL_ROLES' | translate }}</th>
+              <th>{{ 'ADMIN.USERS.COL_NAME' | translate }}</th>
+              <th>{{ 'ADMIN.USERS.COL_EMAIL' | translate }}</th>
+              <th>{{ 'ADMIN.USERS.COL_ROLES' | translate }}</th>
               <th>{{ 'COMMON.STATUS' | translate }}</th>
               <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
@@ -112,7 +113,7 @@ interface UserRolesResponse {
                 <div class="flex flex-col gap-1">
                   <span>{{ user.firstName }} {{ user.lastName }}</span>
                   <small class="text-surface-500">
-                    {{ 'USERS.CREATED_AT' | translate }}:
+                    {{ 'ADMIN.USERS.CREATED_AT' | translate }}:
                     {{ user.createdAt | siwaDate: 'dateTime' }}
                   </small>
                 </div>
@@ -121,9 +122,9 @@ interface UserRolesResponse {
                 <div class="flex flex-col gap-1">
                   <span>{{ user.email }}</span>
                   @if (user.emailConfirmed) {
-                    <p-tag [value]="'USERS.EMAIL_CONFIRMED' | translate" severity="success" />
+                    <p-tag [value]="'ADMIN.USERS.EMAIL_CONFIRMED' | translate" severity="success" />
                   } @else {
-                    <p-tag [value]="'USERS.EMAIL_PENDING' | translate" severity="warn" />
+                    <p-tag [value]="'ADMIN.USERS.EMAIL_PENDING' | translate" severity="warn" />
                   }
                 </div>
               </td>
@@ -133,21 +134,21 @@ interface UserRolesResponse {
                     <p-tag [value]="role" severity="info" />
                   }
                   @if (user.roles.length === 0) {
-                    <span class="text-surface-400 text-sm">—</span>
+                    <span class="text-surface-400 text-sm">â€”</span>
                   }
                 </div>
               </td>
               <td>
                 @if (user.isActive) {
-                  <p-tag [value]="'USERS.STATUS_ACTIVE' | translate" severity="success" />
+                  <p-tag [value]="'ADMIN.USERS.STATUS_ACTIVE' | translate" severity="success" />
                 } @else {
-                  <p-tag [value]="'USERS.STATUS_INACTIVE' | translate" severity="danger" />
+                  <p-tag [value]="'ADMIN.USERS.STATUS_INACTIVE' | translate" severity="danger" />
                 }
               </td>
               <td>
                 <div class="flex flex-wrap gap-2">
                   <p-button
-                    [label]="'USERS.DETAILS' | translate"
+                    [label]="'ADMIN.USERS.DETAILS' | translate"
                     icon="pi pi-eye"
                     severity="secondary"
                     size="small"
@@ -155,7 +156,7 @@ interface UserRolesResponse {
                     (onClick)="openDetailsDialog(user)"
                   />
                   <p-button
-                    [label]="'USERS.MANAGE_ROLES' | translate"
+                    [label]="'ADMIN.USERS.MANAGE_ROLES' | translate"
                     icon="pi pi-shield"
                     severity="secondary"
                     size="small"
@@ -168,7 +169,7 @@ interface UserRolesResponse {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="5" class="text-center py-6 text-surface-500">
-                {{ 'USERS.EMPTY' | translate }}
+                {{ 'ADMIN.USERS.EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -178,46 +179,48 @@ interface UserRolesResponse {
 
     <p-dialog
       [(visible)]="detailsDialogVisible"
-      [header]="'USERS.DETAILS_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.USERS.DETAILS_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '520px' }"
     >
       @if (detailsUser()) {
         <div class="grid gap-4 md:grid-cols-2">
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'USERS.COL_NAME' | translate }}</span>
+            <span class="text-sm text-surface-500">{{ 'ADMIN.USERS.COL_NAME' | translate }}</span>
             <span>{{ detailsUser()!.firstName }} {{ detailsUser()!.lastName }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'USERS.COL_EMAIL' | translate }}</span>
+            <span class="text-sm text-surface-500">{{ 'ADMIN.USERS.COL_EMAIL' | translate }}</span>
             <span>{{ detailsUser()!.email }}</span>
           </div>
           <div class="flex flex-col gap-1">
             <span class="text-sm text-surface-500">{{ 'COMMON.STATUS' | translate }}</span>
             @if (detailsUser()!.isActive) {
-              <p-tag [value]="'USERS.STATUS_ACTIVE' | translate" severity="success" />
+              <p-tag [value]="'ADMIN.USERS.STATUS_ACTIVE' | translate" severity="success" />
             } @else {
-              <p-tag [value]="'USERS.STATUS_INACTIVE' | translate" severity="danger" />
+              <p-tag [value]="'ADMIN.USERS.STATUS_INACTIVE' | translate" severity="danger" />
             }
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'USERS.EMAIL_STATUS' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.USERS.EMAIL_STATUS' | translate
+            }}</span>
             @if (detailsUser()!.emailConfirmed) {
-              <p-tag [value]="'USERS.EMAIL_CONFIRMED' | translate" severity="success" />
+              <p-tag [value]="'ADMIN.USERS.EMAIL_CONFIRMED' | translate" severity="success" />
             } @else {
-              <p-tag [value]="'USERS.EMAIL_PENDING' | translate" severity="warn" />
+              <p-tag [value]="'ADMIN.USERS.EMAIL_PENDING' | translate" severity="warn" />
             }
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'USERS.CREATED_AT' | translate }}</span>
+            <span class="text-sm text-surface-500">{{ 'ADMIN.USERS.CREATED_AT' | translate }}</span>
             <span>{{ detailsUser()!.createdAt | siwaDate: 'dateTime' }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'USERS.LAST_LOGIN' | translate }}</span>
+            <span class="text-sm text-surface-500">{{ 'ADMIN.USERS.LAST_LOGIN' | translate }}</span>
             <span>{{
               detailsUser()!.lastLoginAt
                 ? (detailsUser()!.lastLoginAt! | siwaDate: 'dateTime')
-                : ('USERS.NEVER_LOGGED_IN' | translate)
+                : ('ADMIN.USERS.NEVER_LOGGED_IN' | translate)
             }}</span>
           </div>
         </div>
@@ -234,7 +237,7 @@ interface UserRolesResponse {
     <!-- Roles dialog -->
     <p-dialog
       [(visible)]="rolesDialogVisible"
-      [header]="'USERS.ROLES_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.USERS.ROLES_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '400px' }"
     >
@@ -259,7 +262,7 @@ interface UserRolesResponse {
           }
 
           @if (rolesError()) {
-            <p-message severity="error" [text]="rolesError()!" styleClass="w-full" />
+            <p-message severity="error" [text]="rolesError()! | translate" styleClass="w-full" />
           }
         </div>
       }
@@ -275,6 +278,7 @@ interface UserRolesResponse {
 })
 export class UsersComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly apiError = inject(ApiErrorService);
 
   protected readonly users = signal<UserDto[]>([]);
   protected readonly totalCount = signal(0);
@@ -294,9 +298,9 @@ export class UsersComponent implements OnInit {
   private searchTimeout?: ReturnType<typeof setTimeout>;
 
   protected readonly statusOptions = [
-    { label: 'USERS.STATUS_FILTER_ALL', value: null as boolean | null },
-    { label: 'USERS.STATUS_ACTIVE', value: true },
-    { label: 'USERS.STATUS_INACTIVE', value: false },
+    { label: 'ADMIN.USERS.STATUS_FILTER_ALL', value: null as boolean | null },
+    { label: 'ADMIN.USERS.STATUS_ACTIVE', value: true },
+    { label: 'ADMIN.USERS.STATUS_INACTIVE', value: false },
   ];
 
   ngOnInit(): void {
@@ -357,9 +361,11 @@ export class UsersComponent implements OnInit {
         this.syncUserInList(updatedUser);
         this.rolesLoading.set(false);
       },
-      error: () => {
+      error: error => {
         this.rolesLoading.set(false);
-        this.rolesError.set('Rollen laden mislukt.');
+        this.rolesError.set(
+          this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLES_LOAD_FAILED'),
+        );
       },
     });
   }
@@ -383,7 +389,10 @@ export class UsersComponent implements OnInit {
             user.roles = [...user.roles, role];
             this.syncUserInList(user);
           },
-          error: () => this.rolesError.set('Opslaan mislukt.'),
+          error: error =>
+            this.rolesError.set(
+              this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLE_SAVE_FAILED'),
+            ),
         });
     } else {
       this.api.delete<unknown>(`users/${user.userId}/roles/${role}`).subscribe({
@@ -391,7 +400,10 @@ export class UsersComponent implements OnInit {
           user.roles = user.roles.filter(r => r !== role);
           this.syncUserInList(user);
         },
-        error: () => this.rolesError.set('Verwijderen mislukt.'),
+        error: error =>
+          this.rolesError.set(
+            this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLE_REMOVE_FAILED'),
+          ),
       });
     }
   }

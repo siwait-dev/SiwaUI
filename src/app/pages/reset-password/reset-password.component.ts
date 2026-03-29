@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -34,14 +34,14 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
     PasswordModule,
   ],
   template: `
-    <p-card [header]="'RESET_PASSWORD.TITLE' | translate">
+    <p-card [header]="'USER.RESET_PASSWORD.TITLE' | translate">
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
-        <p class="text-surface-500">{{ 'RESET_PASSWORD.INSTRUCTION' | translate }}</p>
+        <p class="text-surface-500">{{ 'USER.RESET_PASSWORD.INSTRUCTION' | translate }}</p>
 
         <!-- Nieuw wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="newPassword" class="font-medium">
-            {{ 'RESET_PASSWORD.NEW_PASSWORD' | translate }}
+            {{ 'USER.RESET_PASSWORD.NEW_PASSWORD' | translate }}
           </label>
           <p-password
             inputId="newPassword"
@@ -50,7 +50,7 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
             [toggleMask]="true"
             styleClass="w-full"
             [invalid]="isInvalid('newPassword')"
-            [placeholder]="'RESET_PASSWORD.NEW_PASSWORD' | translate"
+            [placeholder]="'USER.RESET_PASSWORD.NEW_PASSWORD' | translate"
           />
           @if (isInvalid('newPassword')) {
             @if (form.get('newPassword')?.hasError('required')) {
@@ -67,7 +67,7 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
         <!-- Bevestig wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="confirmPassword" class="font-medium">
-            {{ 'RESET_PASSWORD.CONFIRM_PASSWORD' | translate }}
+            {{ 'USER.RESET_PASSWORD.CONFIRM_PASSWORD' | translate }}
           </label>
           <p-password
             inputId="confirmPassword"
@@ -76,7 +76,7 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
             [toggleMask]="true"
             styleClass="w-full"
             [invalid]="isInvalidConfirm()"
-            [placeholder]="'RESET_PASSWORD.CONFIRM_PASSWORD' | translate"
+            [placeholder]="'USER.RESET_PASSWORD.CONFIRM_PASSWORD' | translate"
           />
           @if (isInvalidConfirm()) {
             <small class="text-red-500">
@@ -96,14 +96,14 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
 
         <p-button
           type="submit"
-          [label]="'RESET_PASSWORD.SUBMIT' | translate"
+          [label]="'USER.RESET_PASSWORD.SUBMIT' | translate"
           severity="primary"
           styleClass="w-full"
           [loading]="loading()"
         />
 
         <a routerLink="/login" class="text-center text-sm text-surface-500">
-          {{ 'RESET_PASSWORD.BACK_TO_LOGIN' | translate }}
+          {{ 'USER.RESET_PASSWORD.BACK_TO_LOGIN' | translate }}
         </a>
       </form>
     </p-card>

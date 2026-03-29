@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -13,6 +13,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 
 interface TranslationRow {
   key: string;
@@ -47,9 +48,9 @@ interface FlatTranslationsResponse {
 
     <div class="flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">{{ 'TRANSLATIONS.TITLE' | translate }}</h1>
+        <h1 class="text-2xl font-bold">{{ 'ADMIN.TRANSLATIONS.TITLE' | translate }}</h1>
         <p-button
-          [label]="'TRANSLATIONS.ADD' | translate"
+          [label]="'ADMIN.TRANSLATIONS.ADD' | translate"
           icon="pi pi-plus"
           severity="primary"
           (onClick)="openEditDialog(null)"
@@ -61,16 +62,16 @@ interface FlatTranslationsResponse {
           <input
             pInputText
             [(ngModel)]="searchValue"
-            [placeholder]="'TRANSLATIONS.SEARCH_PLACEHOLDER' | translate"
+            [placeholder]="'ADMIN.TRANSLATIONS.SEARCH_PLACEHOLDER' | translate"
             class="w-full max-w-sm"
           />
         </div>
         <p-table [value]="filteredRows()" [paginator]="true" [rows]="20" [loading]="loading()">
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'TRANSLATIONS.COL_KEY' | translate }}</th>
-              <th>{{ 'TRANSLATIONS.COL_NL' | translate }}</th>
-              <th>{{ 'TRANSLATIONS.COL_EN' | translate }}</th>
+              <th>{{ 'ADMIN.TRANSLATIONS.COL_KEY' | translate }}</th>
+              <th>{{ 'ADMIN.TRANSLATIONS.COL_NL' | translate }}</th>
+              <th>{{ 'ADMIN.TRANSLATIONS.COL_EN' | translate }}</th>
               <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </ng-template>
@@ -102,7 +103,7 @@ interface FlatTranslationsResponse {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="4" class="text-center py-6 text-surface-500">
-                {{ 'TRANSLATIONS.EMPTY' | translate }}
+                {{ 'ADMIN.TRANSLATIONS.EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -112,30 +113,30 @@ interface FlatTranslationsResponse {
 
     <p-dialog
       [(visible)]="editDialogVisible"
-      [header]="'TRANSLATIONS.EDIT_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.TRANSLATIONS.EDIT_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '500px' }"
     >
       <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-1">
-          <label class="font-medium">{{ 'TRANSLATIONS.KEY_LABEL' | translate }}</label>
+          <label class="font-medium">{{ 'ADMIN.TRANSLATIONS.KEY_LABEL' | translate }}</label>
           <input pInputText [(ngModel)]="editKey" [disabled]="isEditing" class="w-full font-mono" />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="font-medium">{{ 'TRANSLATIONS.MODULE_LABEL' | translate }}</label>
+          <label class="font-medium">{{ 'ADMIN.TRANSLATIONS.MODULE_LABEL' | translate }}</label>
           <input pInputText [(ngModel)]="editModule" class="w-full" />
-          <small class="text-surface-500">{{ 'TRANSLATIONS.MODULE_HINT' | translate }}</small>
+          <small class="text-surface-500">{{ 'ADMIN.TRANSLATIONS.MODULE_HINT' | translate }}</small>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="font-medium">{{ 'TRANSLATIONS.COL_NL' | translate }}</label>
+          <label class="font-medium">{{ 'ADMIN.TRANSLATIONS.COL_NL' | translate }}</label>
           <textarea pTextarea [(ngModel)]="editNl" rows="3" class="w-full"></textarea>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="font-medium">{{ 'TRANSLATIONS.COL_EN' | translate }}</label>
+          <label class="font-medium">{{ 'ADMIN.TRANSLATIONS.COL_EN' | translate }}</label>
           <textarea pTextarea [(ngModel)]="editEn" rows="3" class="w-full"></textarea>
         </div>
         @if (editError()) {
-          <p-message severity="error" [text]="editError()!" styleClass="w-full" />
+          <p-message severity="error" [text]="editError()! | translate" styleClass="w-full" />
         }
       </div>
       <ng-template pTemplate="footer">
@@ -156,8 +157,10 @@ interface FlatTranslationsResponse {
 })
 export class TranslationsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly apiError = inject(ApiErrorService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly translate = inject(TranslateService);
 
   protected readonly rows = signal<TranslationRow[]>([]);
   protected readonly loading = signal(true);
@@ -236,12 +239,12 @@ export class TranslationsComponent implements OnInit {
     const module = this.editModule.trim();
 
     if (!key) {
-      this.editError.set('Vul een sleutel in.');
+      this.editError.set('ADMIN.TRANSLATIONS.ERRORS.KEY_REQUIRED');
       return;
     }
 
     if (!this.editNl.trim() && !this.editEn.trim()) {
-      this.editError.set('Vul minimaal een Nederlandse of Engelse vertaling in.');
+      this.editError.set('ADMIN.TRANSLATIONS.ERRORS.VALUE_REQUIRED');
       return;
     }
 
@@ -266,19 +269,24 @@ export class TranslationsComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.editDialogVisible = false;
-        this.messageService.add({ severity: 'success', summary: 'Vertaling opgeslagen' });
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant('ADMIN.TRANSLATIONS.MESSAGES.SAVED'),
+        });
         this.loadTranslations();
       },
-      error: () => {
+      error: error => {
         this.saving.set(false);
-        this.editError.set('Opslaan mislukt.');
+        this.editError.set(
+          this.apiError.getMessageKey(error, 'ADMIN.TRANSLATIONS.ERRORS.SAVE_FAILED'),
+        );
       },
     });
   }
 
   protected confirmDelete(row: TranslationRow): void {
     this.confirmationService.confirm({
-      message: `Vertaling "${row.key}" verwijderen voor Nederlands en Engels?`,
+      message: this.translate.instant('ADMIN.TRANSLATIONS.CONFIRM_DELETE', { key: row.key }),
       accept: () => this.deleteTranslation(row),
     });
   }
@@ -290,10 +298,18 @@ export class TranslationsComponent implements OnInit {
     ]).subscribe({
       next: () => {
         this.rows.set(this.rows().filter(existing => existing.key !== row.key));
-        this.messageService.add({ severity: 'success', summary: 'Vertaling verwijderd' });
+        this.messageService.add({
+          severity: 'success',
+          summary: this.translate.instant('ADMIN.TRANSLATIONS.MESSAGES.DELETED'),
+        });
       },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Verwijderen mislukt' });
+      error: error => {
+        this.messageService.add({
+          severity: 'error',
+          summary: this.translate.instant(
+            this.apiError.getMessageKey(error, 'ADMIN.TRANSLATIONS.ERRORS.DELETE_FAILED'),
+          ),
+        });
       },
     });
   }

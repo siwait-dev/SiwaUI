@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -38,13 +38,13 @@ function passwordMatchValidator(): ValidatorFn {
   template: `
     <div class="flex justify-center">
       <div class="w-full max-w-md">
-        <p-card [header]="'CHANGE_PASSWORD.TITLE' | translate">
+        <p-card [header]="'USER.CHANGE_PASSWORD.TITLE' | translate">
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
             <!-- Expired password warning -->
             @if (isExpired) {
               <p-message
                 severity="warn"
-                [text]="'CHANGE_PASSWORD.EXPIRED_WARNING' | translate"
+                [text]="'USER.CHANGE_PASSWORD.EXPIRED_WARNING' | translate"
                 styleClass="w-full"
               />
             }
@@ -52,7 +52,7 @@ function passwordMatchValidator(): ValidatorFn {
             <!-- Current password -->
             <div class="flex flex-col gap-1">
               <label for="currentPassword" class="font-medium">
-                {{ 'CHANGE_PASSWORD.CURRENT_PASSWORD' | translate }}
+                {{ 'USER.CHANGE_PASSWORD.CURRENT_PASSWORD' | translate }}
               </label>
               <p-password
                 inputId="currentPassword"
@@ -61,7 +61,7 @@ function passwordMatchValidator(): ValidatorFn {
                 [toggleMask]="true"
                 styleClass="w-full"
                 [invalid]="isInvalid('currentPassword')"
-                [placeholder]="'CHANGE_PASSWORD.CURRENT_PASSWORD' | translate"
+                [placeholder]="'USER.CHANGE_PASSWORD.CURRENT_PASSWORD' | translate"
               />
               @if (isInvalid('currentPassword')) {
                 <small class="text-red-500">{{ 'VALIDATION.REQUIRED' | translate }}</small>
@@ -71,7 +71,7 @@ function passwordMatchValidator(): ValidatorFn {
             <!-- New password -->
             <div class="flex flex-col gap-1">
               <label for="newPassword" class="font-medium">
-                {{ 'CHANGE_PASSWORD.NEW_PASSWORD' | translate }}
+                {{ 'USER.CHANGE_PASSWORD.NEW_PASSWORD' | translate }}
               </label>
               <p-password
                 inputId="newPassword"
@@ -80,7 +80,7 @@ function passwordMatchValidator(): ValidatorFn {
                 [toggleMask]="true"
                 styleClass="w-full"
                 [invalid]="isInvalid('newPassword')"
-                [placeholder]="'CHANGE_PASSWORD.NEW_PASSWORD' | translate"
+                [placeholder]="'USER.CHANGE_PASSWORD.NEW_PASSWORD' | translate"
               />
               @if (isInvalid('newPassword')) {
                 <div class="flex flex-col gap-0.5">
@@ -99,7 +99,7 @@ function passwordMatchValidator(): ValidatorFn {
             <!-- Confirm password -->
             <div class="flex flex-col gap-1">
               <label for="confirmPassword" class="font-medium">
-                {{ 'CHANGE_PASSWORD.CONFIRM_PASSWORD' | translate }}
+                {{ 'USER.CHANGE_PASSWORD.CONFIRM_PASSWORD' | translate }}
               </label>
               <p-password
                 inputId="confirmPassword"
@@ -108,7 +108,7 @@ function passwordMatchValidator(): ValidatorFn {
                 [toggleMask]="true"
                 styleClass="w-full"
                 [invalid]="isInvalidConfirm()"
-                [placeholder]="'CHANGE_PASSWORD.CONFIRM_PASSWORD' | translate"
+                [placeholder]="'USER.CHANGE_PASSWORD.CONFIRM_PASSWORD' | translate"
               />
               @if (isInvalidConfirm()) {
                 <small class="text-red-500">
@@ -125,7 +125,7 @@ function passwordMatchValidator(): ValidatorFn {
             @if (successMessage()) {
               <p-message
                 severity="success"
-                [text]="'CHANGE_PASSWORD.SUCCESS' | translate"
+                [text]="'USER.CHANGE_PASSWORD.SUCCESS' | translate"
                 styleClass="w-full"
               />
             }
@@ -137,7 +137,7 @@ function passwordMatchValidator(): ValidatorFn {
 
             <p-button
               type="submit"
-              [label]="'CHANGE_PASSWORD.SUBMIT' | translate"
+              [label]="'USER.CHANGE_PASSWORD.SUBMIT' | translate"
               severity="primary"
               styleClass="w-full"
               [loading]="loading()"
@@ -195,7 +195,7 @@ export class ChangePasswordComponent implements OnInit {
   policyErrors(): string[] {
     const errors = this.form.get('newPassword')?.errors?.['passwordPolicy'] as string[] | undefined;
     if (!errors) return [];
-    // Strip parameter suffix (e.g. "VALIDATION.PASSWORD_MIN_LENGTH:8" → key only)
+    // Strip parameter suffix (e.g. "VALIDATION.PASSWORD_MIN_LENGTH:8" â†’ key only)
     return errors.map(e => e.split(':')[0]);
   }
 

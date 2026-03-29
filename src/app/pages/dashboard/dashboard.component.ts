@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -31,8 +31,12 @@ interface RecentActivityItem {
   template: `
     <div class="flex flex-col gap-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">{{ 'DASHBOARD.TITLE' | translate }}</h1>
-        <p-tag [value]="'DASHBOARD.LIVE' | translate" severity="success" icon="pi pi-circle-fill" />
+        <h1 class="text-2xl font-bold">{{ 'APP.DASHBOARD.TITLE' | translate }}</h1>
+        <p-tag
+          [value]="'APP.DASHBOARD.LIVE' | translate"
+          severity="success"
+          icon="pi pi-circle-fill"
+        />
       </div>
 
       <!-- Stat cards -->
@@ -45,8 +49,8 @@ interface RecentActivityItem {
               <i class="pi pi-users text-primary text-xl"></i>
             </div>
             <div>
-              <p class="text-surface-500 text-sm">{{ 'DASHBOARD.TOTAL_USERS' | translate }}</p>
-              <p class="text-2xl font-bold">{{ stats()?.totalUsers ?? '–' }}</p>
+              <p class="text-surface-500 text-sm">{{ 'APP.DASHBOARD.TOTAL_USERS' | translate }}</p>
+              <p class="text-2xl font-bold">{{ stats()?.totalUsers ?? 'â€“' }}</p>
             </div>
           </div>
         </p-card>
@@ -59,8 +63,10 @@ interface RecentActivityItem {
               <i class="pi pi-desktop text-primary text-xl"></i>
             </div>
             <div>
-              <p class="text-surface-500 text-sm">{{ 'DASHBOARD.ACTIVE_THIS_WEEK' | translate }}</p>
-              <p class="text-2xl font-bold">{{ stats()?.activeThisWeek ?? '–' }}</p>
+              <p class="text-surface-500 text-sm">
+                {{ 'APP.DASHBOARD.ACTIVE_THIS_WEEK' | translate }}
+              </p>
+              <p class="text-2xl font-bold">{{ stats()?.activeThisWeek ?? 'â€“' }}</p>
             </div>
           </div>
         </p-card>
@@ -73,23 +79,25 @@ interface RecentActivityItem {
               <i class="pi pi-list-check text-primary text-xl"></i>
             </div>
             <div>
-              <p class="text-surface-500 text-sm">{{ 'DASHBOARD.AUDIT_LAST_24H' | translate }}</p>
-              <p class="text-2xl font-bold">{{ stats()?.auditLast24h ?? '–' }}</p>
+              <p class="text-surface-500 text-sm">
+                {{ 'APP.DASHBOARD.AUDIT_LAST_24H' | translate }}
+              </p>
+              <p class="text-2xl font-bold">{{ stats()?.auditLast24h ?? 'â€“' }}</p>
             </div>
           </div>
         </p-card>
       </div>
 
       <!-- Recent activity -->
-      <p-card [header]="'DASHBOARD.RECENT_ACTIVITY' | translate">
+      <p-card [header]="'APP.DASHBOARD.RECENT_ACTIVITY' | translate">
         @if (stats()?.recentActivity?.length) {
           <p-table [value]="stats()!.recentActivity" [paginator]="false">
             <ng-template pTemplate="header">
               <tr>
-                <th>{{ 'DASHBOARD.COL_TIME' | translate }}</th>
-                <th>{{ 'DASHBOARD.COL_USER' | translate }}</th>
-                <th>{{ 'DASHBOARD.COL_ACTION' | translate }}</th>
-                <th>{{ 'DASHBOARD.COL_STATUS' | translate }}</th>
+                <th>{{ 'APP.DASHBOARD.COL_TIME' | translate }}</th>
+                <th>{{ 'APP.DASHBOARD.COL_USER' | translate }}</th>
+                <th>{{ 'APP.DASHBOARD.COL_ACTION' | translate }}</th>
+                <th>{{ 'APP.DASHBOARD.COL_STATUS' | translate }}</th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item>
@@ -97,7 +105,7 @@ interface RecentActivityItem {
                 <td class="text-sm whitespace-nowrap">
                   {{ item.timestamp | siwaDate: 'datetime' }}
                 </td>
-                <td class="text-sm">{{ item.userEmail ?? '–' }}</td>
+                <td class="text-sm">{{ item.userEmail ?? 'â€“' }}</td>
                 <td class="text-sm font-mono">{{ item.method }} {{ item.path }}</td>
                 <td>
                   <p-tag
@@ -109,19 +117,21 @@ interface RecentActivityItem {
             </ng-template>
           </p-table>
         } @else {
-          <p class="text-surface-500 italic text-sm">{{ 'DASHBOARD.NO_ACTIVITY' | translate }}</p>
+          <p class="text-surface-500 italic text-sm">
+            {{ 'APP.DASHBOARD.NO_ACTIVITY' | translate }}
+          </p>
         }
       </p-card>
 
       <!-- Live notifications -->
       @if (liveNotifications().length > 0) {
-        <p-card [header]="'DASHBOARD.LIVE_NOTIFICATIONS' | translate">
+        <p-card [header]="'APP.DASHBOARD.LIVE_NOTIFICATIONS' | translate">
           <ul class="flex flex-col gap-2">
             @for (n of liveNotifications(); track n.time) {
               <li class="flex items-center gap-2 text-sm">
                 <i class="pi pi-user-plus text-success"></i>
                 <span
-                  >{{ 'DASHBOARD.NEW_USER_REGISTERED' | translate }}:
+                  >{{ 'APP.DASHBOARD.NEW_USER_REGISTERED' | translate }}:
                   <strong>{{ n.email }}</strong></span
                 >
                 <span class="text-surface-400 text-xs ml-auto">{{
@@ -154,7 +164,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       try {
         await this.signalR.connect();
 
-        // Listen for new user registrations (admins only — hub only sends to "admins" group)
+        // Listen for new user registrations (admins only â€” hub only sends to "admins" group)
         this.signalR.on('UserRegistered', (payload: unknown) => {
           const p = payload as { email: string; registeredAt: string };
           // Update total users live
@@ -166,7 +176,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ]);
         });
       } catch {
-        // SignalR connection failed — dashboard still works without it
+        // SignalR connection failed â€” dashboard still works without it
       }
     }
   }

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+﻿import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -20,23 +20,23 @@ import { AuthService } from '../../core/services/auth.service';
     MessageModule,
   ],
   template: `
-    <p-card [header]="'FORGOT_PASSWORD.TITLE' | translate">
+    <p-card [header]="'USER.FORGOT_PASSWORD.TITLE' | translate">
       @if (sent()) {
         <!-- Succesbericht -->
         <div class="flex flex-col gap-4">
           <p-message
             severity="success"
-            [text]="'FORGOT_PASSWORD.SUCCESS' | translate"
+            [text]="'USER.FORGOT_PASSWORD.SUCCESS' | translate"
             styleClass="w-full"
           />
           <a routerLink="/login" class="text-sm text-surface-500 text-center">
-            {{ 'FORGOT_PASSWORD.BACK_TO_LOGIN' | translate }}
+            {{ 'USER.FORGOT_PASSWORD.BACK_TO_LOGIN' | translate }}
           </a>
         </div>
       } @else {
         <!-- Formulier -->
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
-          <p class="text-surface-500">{{ 'FORGOT_PASSWORD.INSTRUCTION' | translate }}</p>
+          <p class="text-surface-500">{{ 'USER.FORGOT_PASSWORD.INSTRUCTION' | translate }}</p>
 
           <!-- E-mailadres -->
           <div class="flex flex-col gap-1">
@@ -44,7 +44,7 @@ import { AuthService } from '../../core/services/auth.service';
               pInputText
               type="email"
               formControlName="email"
-              [placeholder]="'FORGOT_PASSWORD.EMAIL_PLACEHOLDER' | translate"
+              [placeholder]="'USER.FORGOT_PASSWORD.EMAIL_PLACEHOLDER' | translate"
               [invalid]="isInvalid('email')"
               class="w-full"
             />
@@ -66,7 +66,7 @@ import { AuthService } from '../../core/services/auth.service';
 
           <p-button
             type="submit"
-            [label]="'FORGOT_PASSWORD.SUBMIT' | translate"
+            [label]="'USER.FORGOT_PASSWORD.SUBMIT' | translate"
             severity="primary"
             styleClass="w-full"
             [loading]="loading()"
@@ -74,7 +74,7 @@ import { AuthService } from '../../core/services/auth.service';
 
           <p class="text-center text-sm">
             <a routerLink="/login" class="text-surface-500">
-              {{ 'FORGOT_PASSWORD.BACK_TO_LOGIN' | translate }}
+              {{ 'USER.FORGOT_PASSWORD.BACK_TO_LOGIN' | translate }}
             </a>
           </p>
         </form>

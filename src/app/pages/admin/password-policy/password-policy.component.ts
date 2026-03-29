@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -23,20 +23,22 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
   ],
   template: `
     <div class="flex flex-col gap-6 max-w-lg">
-      <h1 class="text-2xl font-bold">{{ 'PASSWORD_POLICY.TITLE' | translate }}</h1>
+      <h1 class="text-2xl font-bold">{{ 'ADMIN.PASSWORD_POLICY.TITLE' | translate }}</h1>
 
       @if (loading()) {
         <p class="text-surface-500">{{ 'COMMON.LOADING' | translate }}</p>
       } @else {
         <form [formGroup]="form" (ngSubmit)="save()" novalidate class="flex flex-col gap-6">
           <!-- Complexity -->
-          <p-card [header]="'PASSWORD_POLICY.COMPLEXITY' | translate">
+          <p-card [header]="'ADMIN.PASSWORD_POLICY.COMPLEXITY' | translate">
             <div class="flex flex-col gap-4">
               <!-- Min length -->
               <div class="flex flex-col gap-1">
-                <label class="font-medium">{{ 'PASSWORD_POLICY.MIN_LENGTH' | translate }}</label>
+                <label class="font-medium">{{
+                  'ADMIN.PASSWORD_POLICY.MIN_LENGTH' | translate
+                }}</label>
                 <p class="text-surface-500 text-sm">
-                  {{ 'PASSWORD_POLICY.MIN_LENGTH_HINT' | translate }}
+                  {{ 'ADMIN.PASSWORD_POLICY.MIN_LENGTH_HINT' | translate }}
                 </p>
                 <p-inputNumber
                   formControlName="minLength"
@@ -55,10 +57,10 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 <p-checkbox formControlName="requireDigit" [binary]="true" inputId="requireDigit" />
                 <div>
                   <label for="requireDigit" class="font-medium cursor-pointer">
-                    {{ 'PASSWORD_POLICY.REQUIRE_DIGIT' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_DIGIT' | translate }}
                   </label>
                   <p class="text-surface-500 text-sm">
-                    {{ 'PASSWORD_POLICY.REQUIRE_DIGIT_HINT' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_DIGIT_HINT' | translate }}
                   </p>
                 </div>
               </div>
@@ -72,10 +74,10 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 />
                 <div>
                   <label for="requireUppercase" class="font-medium cursor-pointer">
-                    {{ 'PASSWORD_POLICY.REQUIRE_UPPERCASE' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_UPPERCASE' | translate }}
                   </label>
                   <p class="text-surface-500 text-sm">
-                    {{ 'PASSWORD_POLICY.REQUIRE_UPPERCASE_HINT' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_UPPERCASE_HINT' | translate }}
                   </p>
                 </div>
               </div>
@@ -89,10 +91,10 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 />
                 <div>
                   <label for="requireNonAlphanumeric" class="font-medium cursor-pointer">
-                    {{ 'PASSWORD_POLICY.REQUIRE_SPECIAL' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_SPECIAL' | translate }}
                   </label>
                   <p class="text-surface-500 text-sm">
-                    {{ 'PASSWORD_POLICY.REQUIRE_SPECIAL_HINT' | translate }}
+                    {{ 'ADMIN.PASSWORD_POLICY.REQUIRE_SPECIAL_HINT' | translate }}
                   </p>
                 </div>
               </div>
@@ -100,13 +102,15 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
           </p-card>
 
           <!-- Expiry -->
-          <p-card [header]="'PASSWORD_POLICY.EXPIRY' | translate">
+          <p-card [header]="'ADMIN.PASSWORD_POLICY.EXPIRY' | translate">
             <div class="flex flex-col gap-4">
               <!-- Max age days -->
               <div class="flex flex-col gap-1">
-                <label class="font-medium">{{ 'PASSWORD_POLICY.MAX_AGE_DAYS' | translate }}</label>
+                <label class="font-medium">{{
+                  'ADMIN.PASSWORD_POLICY.MAX_AGE_DAYS' | translate
+                }}</label>
                 <p class="text-surface-500 text-sm">
-                  {{ 'PASSWORD_POLICY.MAX_AGE_HINT' | translate }}
+                  {{ 'ADMIN.PASSWORD_POLICY.MAX_AGE_HINT' | translate }}
                 </p>
                 <p-inputNumber
                   formControlName="maxAgeDays"
@@ -119,7 +123,7 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
               <!-- Refresh token expiration days -->
               <div class="flex flex-col gap-1">
                 <label class="font-medium">{{
-                  'PASSWORD_POLICY.REFRESH_TOKEN_DAYS' | translate
+                  'ADMIN.PASSWORD_POLICY.REFRESH_TOKEN_DAYS' | translate
                 }}</label>
                 <p-inputNumber
                   formControlName="refreshTokenExpirationDays"
@@ -135,11 +139,13 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
           </p-card>
 
           <!-- History -->
-          <p-card [header]="'PASSWORD_POLICY.HISTORY' | translate">
+          <p-card [header]="'ADMIN.PASSWORD_POLICY.HISTORY' | translate">
             <div class="flex flex-col gap-1">
-              <label class="font-medium">{{ 'PASSWORD_POLICY.HISTORY_COUNT' | translate }}</label>
+              <label class="font-medium">{{
+                'ADMIN.PASSWORD_POLICY.HISTORY_COUNT' | translate
+              }}</label>
               <p class="text-surface-500 text-sm">
-                {{ 'PASSWORD_POLICY.HISTORY_HINT' | translate }}
+                {{ 'ADMIN.PASSWORD_POLICY.HISTORY_HINT' | translate }}
               </p>
               <p-inputNumber
                 formControlName="historyCount"
@@ -151,7 +157,7 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
           </p-card>
 
           <!-- Breached passwords -->
-          <p-card [header]="'PASSWORD_POLICY.BREACHED' | translate">
+          <p-card [header]="'ADMIN.PASSWORD_POLICY.BREACHED' | translate">
             <div class="flex items-center gap-3">
               <p-checkbox
                 formControlName="checkBreachedPasswords"
@@ -159,7 +165,7 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 inputId="checkBreachedPasswords"
               />
               <label for="checkBreachedPasswords" class="font-medium cursor-pointer">
-                {{ 'PASSWORD_POLICY.CHECK_BREACHED' | translate }}
+                {{ 'ADMIN.PASSWORD_POLICY.CHECK_BREACHED' | translate }}
               </label>
             </div>
           </p-card>
@@ -168,21 +174,21 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
           @if (saveSuccess()) {
             <p-message
               severity="success"
-              [text]="'PASSWORD_POLICY.SAVE_SUCCESS' | translate"
+              [text]="'ADMIN.PASSWORD_POLICY.SAVE_SUCCESS' | translate"
               styleClass="w-full"
             />
           }
           @if (saveError()) {
             <p-message
               severity="error"
-              [text]="'PASSWORD_POLICY.SAVE_ERROR' | translate"
+              [text]="'ADMIN.PASSWORD_POLICY.SAVE_ERROR' | translate"
               styleClass="w-full"
             />
           }
 
           <p-button
             type="submit"
-            [label]="'PASSWORD_POLICY.SAVE' | translate"
+            [label]="'ADMIN.PASSWORD_POLICY.SAVE' | translate"
             icon="pi pi-save"
             severity="primary"
             [loading]="saving()"

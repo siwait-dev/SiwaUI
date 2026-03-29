@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -50,14 +50,14 @@ interface ClientLogPagedResponse {
   ],
   template: `
     <div class="flex flex-col gap-6">
-      <h1 class="text-2xl font-bold">{{ 'LOG_VIEWER.TITLE' | translate }}</h1>
+      <h1 class="text-2xl font-bold">{{ 'ADMIN.LOG_VIEWER.TITLE' | translate }}</h1>
 
       <p-card>
         <div class="flex gap-3 mb-4 flex-wrap">
           <p-select
             [options]="levelOptions"
             [(ngModel)]="selectedLevel"
-            [placeholder]="'LOG_VIEWER.LEVEL_PLACEHOLDER' | translate"
+            [placeholder]="'ADMIN.LOG_VIEWER.LEVEL_PLACEHOLDER' | translate"
             [showClear]="true"
             (ngModelChange)="reload()"
             class="w-44"
@@ -65,14 +65,14 @@ interface ClientLogPagedResponse {
           <input
             pInputText
             [(ngModel)]="filterUserId"
-            [placeholder]="'LOG_VIEWER.FILTER_USER' | translate"
+            [placeholder]="'ADMIN.LOG_VIEWER.FILTER_USER' | translate"
             (keyup.enter)="reload()"
             class="w-48"
           />
           <input
             pInputText
             [(ngModel)]="filterCorrelationId"
-            [placeholder]="'LOG_VIEWER.FILTER_CORRELATION' | translate"
+            [placeholder]="'ADMIN.LOG_VIEWER.FILTER_CORRELATION' | translate"
             (keyup.enter)="reload()"
             class="w-56"
           />
@@ -89,7 +89,7 @@ interface ClientLogPagedResponse {
             class="rounded-md border border-surface-300 bg-transparent px-3 py-2 text-sm dark:border-surface-700"
           />
           <p-button
-            [label]="'LOG_VIEWER.CLEAR_FILTERS' | translate"
+            [label]="'ADMIN.LOG_VIEWER.CLEAR_FILTERS' | translate"
             icon="pi pi-filter-slash"
             severity="secondary"
             [outlined]="true"
@@ -108,12 +108,12 @@ interface ClientLogPagedResponse {
         >
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'LOG_VIEWER.COL_TIMESTAMP' | translate }}</th>
-              <th>{{ 'LOG_VIEWER.COL_LEVEL' | translate }}</th>
-              <th>{{ 'LOG_VIEWER.COL_MESSAGE' | translate }}</th>
-              <th>{{ 'LOG_VIEWER.COL_USER' | translate }}</th>
-              <th>{{ 'LOG_VIEWER.COL_CORRELATION' | translate }}</th>
-              <th>{{ 'LOG_VIEWER.COL_URL' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_TIMESTAMP' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_LEVEL' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_MESSAGE' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_USER' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_CORRELATION' | translate }}</th>
+              <th>{{ 'ADMIN.LOG_VIEWER.COL_URL' | translate }}</th>
               <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </ng-template>
@@ -124,12 +124,12 @@ interface ClientLogPagedResponse {
                 <p-tag [value]="log.level" [severity]="levelSeverity(log.level)" />
               </td>
               <td class="max-w-md truncate text-sm">{{ log.message }}</td>
-              <td class="text-sm">{{ log.userId ?? '—' }}</td>
-              <td class="font-mono text-sm max-w-xs truncate">{{ log.correlationId ?? '—' }}</td>
+              <td class="text-sm">{{ log.userId ?? 'â€”' }}</td>
+              <td class="font-mono text-sm max-w-xs truncate">{{ log.correlationId ?? 'â€”' }}</td>
               <td class="font-mono text-sm max-w-xs truncate">{{ log.url }}</td>
               <td>
                 <p-button
-                  [label]="'LOG_VIEWER.DETAILS' | translate"
+                  [label]="'ADMIN.LOG_VIEWER.DETAILS' | translate"
                   icon="pi pi-eye"
                   severity="secondary"
                   size="small"
@@ -142,7 +142,7 @@ interface ClientLogPagedResponse {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="7" class="text-center py-6 text-surface-500">
-                {{ 'LOG_VIEWER.EMPTY' | translate }}
+                {{ 'ADMIN.LOG_VIEWER.EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -152,7 +152,7 @@ interface ClientLogPagedResponse {
 
     <p-dialog
       [(visible)]="detailsDialogVisible"
-      [header]="'LOG_VIEWER.DETAILS_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.LOG_VIEWER.DETAILS_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '760px' }"
     >
@@ -161,12 +161,14 @@ interface ClientLogPagedResponse {
           <div class="grid gap-4 md:grid-cols-2">
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_TIMESTAMP' | translate
+                'ADMIN.LOG_VIEWER.COL_TIMESTAMP' | translate
               }}</span>
               <span>{{ selectedLog()!.timestamp | siwaDate: 'dateTime' }}</span>
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_LEVEL' | translate }}</span>
+              <span class="text-sm text-surface-500">{{
+                'ADMIN.LOG_VIEWER.COL_LEVEL' | translate
+              }}</span>
               <p-tag
                 [value]="selectedLog()!.level"
                 [severity]="levelSeverity(selectedLog()!.level)"
@@ -174,36 +176,40 @@ interface ClientLogPagedResponse {
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_MESSAGE' | translate
+                'ADMIN.LOG_VIEWER.COL_MESSAGE' | translate
               }}</span>
               <span>{{ selectedLog()!.message }}</span>
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_USER' | translate }}</span>
-              <span>{{ selectedLog()!.userId ?? '—' }}</span>
+              <span class="text-sm text-surface-500">{{
+                'ADMIN.LOG_VIEWER.COL_USER' | translate
+              }}</span>
+              <span>{{ selectedLog()!.userId ?? 'â€”' }}</span>
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_CORRELATION' | translate
+                'ADMIN.LOG_VIEWER.COL_CORRELATION' | translate
               }}</span>
-              <span class="font-mono text-sm">{{ selectedLog()!.correlationId ?? '—' }}</span>
+              <span class="font-mono text-sm">{{ selectedLog()!.correlationId ?? 'â€”' }}</span>
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
-              <span class="text-sm text-surface-500">{{ 'LOG_VIEWER.COL_URL' | translate }}</span>
+              <span class="text-sm text-surface-500">{{
+                'ADMIN.LOG_VIEWER.COL_URL' | translate
+              }}</span>
               <span class="font-mono text-sm break-all">{{ selectedLog()!.url }}</span>
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_USER_AGENT' | translate
+                'ADMIN.LOG_VIEWER.COL_USER_AGENT' | translate
               }}</span>
-              <span class="text-sm break-all">{{ selectedLog()!.userAgent ?? '—' }}</span>
+              <span class="text-sm break-all">{{ selectedLog()!.userAgent ?? 'â€”' }}</span>
             </div>
           </div>
 
           @if (selectedLog()!.actionTrail) {
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_ACTION_TRAIL' | translate
+                'ADMIN.LOG_VIEWER.COL_ACTION_TRAIL' | translate
               }}</span>
               <pre
                 class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"
@@ -215,7 +221,7 @@ interface ClientLogPagedResponse {
           @if (selectedLog()!.context) {
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_CONTEXT' | translate
+                'ADMIN.LOG_VIEWER.COL_CONTEXT' | translate
               }}</span>
               <pre
                 class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"
@@ -227,7 +233,7 @@ interface ClientLogPagedResponse {
           @if (selectedLog()!.stackTrace) {
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
-                'LOG_VIEWER.COL_STACKTRACE' | translate
+                'ADMIN.LOG_VIEWER.COL_STACKTRACE' | translate
               }}</span>
               <pre
                 class="overflow-auto rounded-lg bg-surface-100 p-3 text-xs dark:bg-surface-900"

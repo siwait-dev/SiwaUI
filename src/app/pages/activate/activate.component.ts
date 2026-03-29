@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -18,20 +18,20 @@ import { AuthService } from '../../core/services/auth.service';
     ProgressSpinnerModule,
   ],
   template: `
-    <p-card [header]="'ACTIVATE.TITLE' | translate">
+    <p-card [header]="'USER.ACTIVATE.TITLE' | translate">
       <div class="flex flex-col items-center gap-6 py-4">
         <!-- Bezig met activeren -->
         @if (status() === 'loading') {
           <p-progressSpinner strokeWidth="4" styleClass="w-12 h-12" />
-          <p class="text-surface-500">{{ 'ACTIVATE.ACTIVATING' | translate }}</p>
+          <p class="text-surface-500">{{ 'USER.ACTIVATE.ACTIVATING' | translate }}</p>
         }
 
         <!-- Succesvol geactiveerd -->
         @if (status() === 'success') {
           <i class="pi pi-check-circle text-green-500 text-6xl"></i>
-          <p class="text-center text-surface-600">{{ 'ACTIVATE.SUCCESS' | translate }}</p>
+          <p class="text-center text-surface-600">{{ 'USER.ACTIVATE.SUCCESS' | translate }}</p>
           <p-button
-            [label]="'ACTIVATE.GO_TO_LOGIN' | translate"
+            [label]="'USER.ACTIVATE.GO_TO_LOGIN' | translate"
             severity="primary"
             routerLink="/login"
           />
@@ -46,7 +46,7 @@ import { AuthService } from '../../core/services/auth.service';
             styleClass="w-full"
           />
           <p-button
-            [label]="'ACTIVATE.REQUEST_NEW_LINK' | translate"
+            [label]="'USER.ACTIVATE.REQUEST_NEW_LINK' | translate"
             severity="secondary"
             routerLink="/forgot-password"
           />
@@ -55,9 +55,9 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Geen params in URL: toon instructie -->
         @if (status() === 'no-params') {
           <i class="pi pi-envelope text-primary text-6xl"></i>
-          <p class="text-center text-surface-500">{{ 'ACTIVATE.CHECK_EMAIL' | translate }}</p>
+          <p class="text-center text-surface-500">{{ 'USER.ACTIVATE.CHECK_EMAIL' | translate }}</p>
           <a routerLink="/login" class="text-sm text-surface-500">
-            {{ 'ACTIVATE.BACK_TO_LOGIN' | translate }}
+            {{ 'USER.ACTIVATE.BACK_TO_LOGIN' | translate }}
           </a>
         }
       </div>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -20,10 +20,10 @@ import { InputTextModule } from 'primeng/inputtext';
   ],
   template: `
     <div class="flex flex-col gap-6">
-      <h1 class="text-2xl font-bold">{{ 'DEMO.TITLE' | translate }}</h1>
-      <p class="text-surface-500">{{ 'DEMO.SUBTITLE' | translate }}</p>
+      <h1 class="text-2xl font-bold">{{ 'APP.DEMO.TITLE' | translate }}</h1>
+      <p class="text-surface-500">{{ 'APP.DEMO.SUBTITLE' | translate }}</p>
 
-      <p-card [header]="'DEMO.BUTTONS' | translate">
+      <p-card [header]="'APP.DEMO.BUTTONS' | translate">
         <div class="flex flex-wrap gap-3">
           <p-button label="Primary" severity="primary" />
           <p-button label="Secondary" severity="secondary" />
@@ -37,7 +37,7 @@ import { InputTextModule } from 'primeng/inputtext';
         </div>
       </p-card>
 
-      <p-card [header]="'DEMO.TAGS_BADGES' | translate">
+      <p-card [header]="'APP.DEMO.TAGS_BADGES' | translate">
         <div class="flex flex-wrap gap-3 items-center">
           <p-tag value="Primary" />
           <p-tag value="Success" severity="success" />
@@ -49,9 +49,9 @@ import { InputTextModule } from 'primeng/inputtext';
         </div>
       </p-card>
 
-      <p-card [header]="'DEMO.INPUT' | translate">
+      <p-card [header]="'APP.DEMO.INPUT' | translate">
         <div class="flex flex-col gap-3 max-w-sm">
-          <input pInputText [placeholder]="'DEMO.INPUT' | translate" class="w-full" />
+          <input pInputText [placeholder]="'APP.DEMO.INPUT' | translate" class="w-full" />
         </div>
       </p-card>
     </div>

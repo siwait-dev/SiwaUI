@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AvatarModule } from 'primeng/avatar';
@@ -31,7 +31,7 @@ interface ProfileResponse {
   ],
   template: `
     <div class="flex flex-col gap-6 max-w-2xl">
-      <h1 class="text-2xl font-bold">{{ 'PROFILE.TITLE' | translate }}</h1>
+      <h1 class="text-2xl font-bold">{{ 'USER.PROFILE.TITLE' | translate }}</h1>
 
       @if (loading()) {
         <p class="text-surface-500">{{ 'COMMON.LOADING' | translate }}</p>
@@ -57,7 +57,7 @@ interface ProfileResponse {
 
           <form [formGroup]="form" (ngSubmit)="save()" novalidate class="flex flex-col gap-4">
             <div class="flex flex-col gap-1">
-              <label class="font-medium">{{ 'PROFILE.FIRST_NAME' | translate }}</label>
+              <label class="font-medium">{{ 'USER.PROFILE.FIRST_NAME' | translate }}</label>
               <input pInputText formControlName="firstName" class="w-full" />
               @if (isInvalid('firstName')) {
                 <small class="text-red-500">{{ 'VALIDATION.REQUIRED' | translate }}</small>
@@ -65,7 +65,7 @@ interface ProfileResponse {
             </div>
 
             <div class="flex flex-col gap-1">
-              <label class="font-medium">{{ 'PROFILE.LAST_NAME' | translate }}</label>
+              <label class="font-medium">{{ 'USER.PROFILE.LAST_NAME' | translate }}</label>
               <input pInputText formControlName="lastName" class="w-full" />
               @if (isInvalid('lastName')) {
                 <small class="text-red-500">{{ 'VALIDATION.REQUIRED' | translate }}</small>
@@ -73,28 +73,28 @@ interface ProfileResponse {
             </div>
 
             <div class="flex flex-col gap-1">
-              <label class="font-medium">{{ 'PROFILE.EMAIL_READONLY' | translate }}</label>
+              <label class="font-medium">{{ 'USER.PROFILE.EMAIL_READONLY' | translate }}</label>
               <input pInputText [value]="email()" class="w-full opacity-60" readonly />
             </div>
 
             @if (saveSuccess()) {
               <p-message
                 severity="success"
-                [text]="'PROFILE.SAVE_SUCCESS' | translate"
+                [text]="'USER.PROFILE.SAVE_SUCCESS' | translate"
                 styleClass="w-full"
               />
             }
             @if (saveError()) {
               <p-message
                 severity="error"
-                [text]="'PROFILE.SAVE_ERROR' | translate"
+                [text]="'USER.PROFILE.SAVE_ERROR' | translate"
                 styleClass="w-full"
               />
             }
 
             <p-button
               type="submit"
-              [label]="'PROFILE.SAVE' | translate"
+              [label]="'USER.PROFILE.SAVE' | translate"
               icon="pi pi-save"
               severity="primary"
               [loading]="saving()"

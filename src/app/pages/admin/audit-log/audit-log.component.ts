@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -46,14 +46,14 @@ interface AuditPagedResponse {
   ],
   template: `
     <div class="flex flex-col gap-6">
-      <h1 class="text-2xl font-bold">{{ 'AUDIT_LOG.TITLE' | translate }}</h1>
+      <h1 class="text-2xl font-bold">{{ 'ADMIN.AUDIT_LOG.TITLE' | translate }}</h1>
 
       <p-card>
         <div class="flex gap-3 mb-4 flex-wrap">
           <p-select
             [options]="methodOptions"
             [(ngModel)]="selectedMethod"
-            [placeholder]="'AUDIT_LOG.FILTER_METHOD' | translate"
+            [placeholder]="'ADMIN.AUDIT_LOG.FILTER_METHOD' | translate"
             [showClear]="true"
             (ngModelChange)="reload()"
             class="w-40"
@@ -61,14 +61,14 @@ interface AuditPagedResponse {
           <input
             pInputText
             [(ngModel)]="filterEmail"
-            [placeholder]="'AUDIT_LOG.FILTER_EMAIL' | translate"
+            [placeholder]="'ADMIN.AUDIT_LOG.FILTER_EMAIL' | translate"
             (keyup.enter)="reload()"
             class="w-48"
           />
           <input
             pInputText
             [(ngModel)]="filterPath"
-            [placeholder]="'AUDIT_LOG.FILTER_PATH' | translate"
+            [placeholder]="'ADMIN.AUDIT_LOG.FILTER_PATH' | translate"
             (keyup.enter)="reload()"
             class="w-56"
           />
@@ -85,7 +85,7 @@ interface AuditPagedResponse {
             class="rounded-md border border-surface-300 bg-transparent px-3 py-2 text-sm dark:border-surface-700"
           />
           <p-button
-            [label]="'AUDIT_LOG.CLEAR_FILTERS' | translate"
+            [label]="'ADMIN.AUDIT_LOG.CLEAR_FILTERS' | translate"
             icon="pi pi-filter-slash"
             severity="secondary"
             [outlined]="true"
@@ -104,12 +104,12 @@ interface AuditPagedResponse {
         >
           <ng-template pTemplate="header">
             <tr>
-              <th>{{ 'AUDIT_LOG.COL_TIMESTAMP' | translate }}</th>
-              <th>{{ 'AUDIT_LOG.COL_ACTION' | translate }}</th>
-              <th>{{ 'AUDIT_LOG.COL_RESOURCE' | translate }}</th>
-              <th>{{ 'AUDIT_LOG.COL_USER' | translate }}</th>
-              <th>{{ 'AUDIT_LOG.COL_STATUS' | translate }}</th>
-              <th>{{ 'AUDIT_LOG.COL_IP' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_TIMESTAMP' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_ACTION' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_RESOURCE' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_USER' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_STATUS' | translate }}</th>
+              <th>{{ 'ADMIN.AUDIT_LOG.COL_IP' | translate }}</th>
               <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </ng-template>
@@ -120,14 +120,14 @@ interface AuditPagedResponse {
                 <p-tag [value]="log.method" [severity]="methodSeverity(log.method)" />
               </td>
               <td class="font-mono text-sm max-w-xs truncate">{{ log.path }}</td>
-              <td class="text-sm">{{ log.email ?? '—' }}</td>
+              <td class="text-sm">{{ log.email ?? 'â€”' }}</td>
               <td>
                 <p-tag [value]="'' + log.statusCode" [severity]="statusSeverity(log.statusCode)" />
               </td>
-              <td class="text-sm">{{ log.ipAddress ?? '—' }}</td>
+              <td class="text-sm">{{ log.ipAddress ?? 'â€”' }}</td>
               <td>
                 <p-button
-                  [label]="'AUDIT_LOG.DETAILS' | translate"
+                  [label]="'ADMIN.AUDIT_LOG.DETAILS' | translate"
                   icon="pi pi-eye"
                   severity="secondary"
                   size="small"
@@ -140,7 +140,7 @@ interface AuditPagedResponse {
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="7" class="text-center py-6 text-surface-500">
-                {{ 'AUDIT_LOG.EMPTY' | translate }}
+                {{ 'ADMIN.AUDIT_LOG.EMPTY' | translate }}
               </td>
             </tr>
           </ng-template>
@@ -150,7 +150,7 @@ interface AuditPagedResponse {
 
     <p-dialog
       [(visible)]="detailsDialogVisible"
-      [header]="'AUDIT_LOG.DETAILS_DIALOG_TITLE' | translate"
+      [header]="'ADMIN.AUDIT_LOG.DETAILS_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '640px' }"
     >
@@ -158,38 +158,48 @@ interface AuditPagedResponse {
         <div class="grid gap-4 md:grid-cols-2">
           <div class="flex flex-col gap-1">
             <span class="text-sm text-surface-500">{{
-              'AUDIT_LOG.COL_TIMESTAMP' | translate
+              'ADMIN.AUDIT_LOG.COL_TIMESTAMP' | translate
             }}</span>
             <span>{{ selectedLog()!.timestamp | siwaDate: 'dateTime' }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_ACTION' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.AUDIT_LOG.COL_ACTION' | translate
+            }}</span>
             <p-tag
               [value]="selectedLog()!.method"
               [severity]="methodSeverity(selectedLog()!.method)"
             />
           </div>
           <div class="flex flex-col gap-1 md:col-span-2">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_RESOURCE' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.AUDIT_LOG.COL_RESOURCE' | translate
+            }}</span>
             <span class="font-mono text-sm break-all">{{ selectedLog()!.path }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_USER' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.AUDIT_LOG.COL_USER' | translate
+            }}</span>
             <span>{{ selectedLog()!.email ?? '-' }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_IP' | translate }}</span>
+            <span class="text-sm text-surface-500">{{ 'ADMIN.AUDIT_LOG.COL_IP' | translate }}</span>
             <span>{{ selectedLog()!.ipAddress ?? '-' }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_STATUS' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.AUDIT_LOG.COL_STATUS' | translate
+            }}</span>
             <p-tag
               [value]="selectedLog()!.statusCode.toString()"
               [severity]="statusSeverity(selectedLog()!.statusCode)"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-sm text-surface-500">{{ 'AUDIT_LOG.COL_DURATION' | translate }}</span>
+            <span class="text-sm text-surface-500">{{
+              'ADMIN.AUDIT_LOG.COL_DURATION' | translate
+            }}</span>
             <span>{{ selectedLog()!.durationMs }} ms</span>
           </div>
         </div>
