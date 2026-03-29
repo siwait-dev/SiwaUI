@@ -120,17 +120,25 @@
     "TITLE": "Dashboard",
     "LIVE": "Live",
     "TOTAL_USERS": "Totaal gebruikers",
-    "ACTIVE_SESSIONS": "Actieve sessies",
-    "PENDING_TASKS": "Openstaande taken",
+    "ACTIVE_THIS_WEEK": "Actief deze week",
+    "AUDIT_LAST_24H": "Audit acties (24u)",
     "RECENT_ACTIVITY": "Recente activiteit",
-    "SIGNALR_PLACEHOLDER": "SignalR realtime updates verschijnen hier. (Fase 3)"
+    "NO_ACTIVITY": "Nog geen activiteit geregistreerd.",
+    "LIVE_NOTIFICATIONS": "Live meldingen",
+    "NEW_USER_REGISTERED": "Nieuw account aangemaakt",
+    "COL_TIME": "Tijdstip",
+    "COL_USER": "Gebruiker",
+    "COL_ACTION": "Actie",
+    "COL_STATUS": "Status"
   },
   "PROFILE": {
     "TITLE": "Mijn profiel",
     "FIRST_NAME": "Voornaam",
     "LAST_NAME": "Achternaam",
     "EMAIL_READONLY": "E-mailadres (alleen lezen)",
-    "SAVE": "Wijzigingen opslaan"
+    "SAVE": "Wijzigingen opslaan",
+    "SAVE_SUCCESS": "Profiel succesvol opgeslagen.",
+    "SAVE_ERROR": "Opslaan mislukt. Probeer het opnieuw."
   },
   "DEMO": {
     "TITLE": "Component demo",

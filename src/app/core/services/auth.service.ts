@@ -104,6 +104,10 @@ export class AuthService {
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
+  getAccessToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
   // ── Auth-acties ─────────────────────────────────────────────────────────────
 
   login(req: LoginRequest): Observable<AuthResponse> {

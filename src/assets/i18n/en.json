@@ -120,17 +120,25 @@
     "TITLE": "Dashboard",
     "LIVE": "Live",
     "TOTAL_USERS": "Total users",
-    "ACTIVE_SESSIONS": "Active sessions",
-    "PENDING_TASKS": "Pending tasks",
+    "ACTIVE_THIS_WEEK": "Active this week",
+    "AUDIT_LAST_24H": "Audit actions (24h)",
     "RECENT_ACTIVITY": "Recent activity",
-    "SIGNALR_PLACEHOLDER": "SignalR real-time updates will appear here. (Phase 3)"
+    "NO_ACTIVITY": "No activity recorded yet.",
+    "LIVE_NOTIFICATIONS": "Live notifications",
+    "NEW_USER_REGISTERED": "New account created",
+    "COL_TIME": "Time",
+    "COL_USER": "User",
+    "COL_ACTION": "Action",
+    "COL_STATUS": "Status"
   },
   "PROFILE": {
     "TITLE": "My profile",
     "FIRST_NAME": "First name",
     "LAST_NAME": "Last name",
-    "EMAIL_READONLY": "Email address (read only)",
-    "SAVE": "Save changes"
+    "EMAIL_READONLY": "Email address (read-only)",
+    "SAVE": "Save changes",
+    "SAVE_SUCCESS": "Profile saved successfully.",
+    "SAVE_ERROR": "Save failed. Please try again."
   },
   "DEMO": {
     "TITLE": "Component demo",
