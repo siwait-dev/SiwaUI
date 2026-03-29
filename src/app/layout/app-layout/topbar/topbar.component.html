@@ -1,0 +1,80 @@
+<header class="siwa-topbar">
+  <!-- ── Brand — alleen zichtbaar in topbar-layout (sidebar toont het al) -->
+  @if (themeService.layout() === 'topbar') {
+    <a routerLink="/app/dashboard" class="siwa-topbar__brand">
+      <span class="siwa-topbar__brand-icon">S</span>
+      <span class="siwa-topbar__brand-text">SiwaUI</span>
+    </a>
+  }
+
+  <!-- ── Horizontale nav (alleen in topbar-layout) ─────────────────── -->
+  @if (themeService.layout() === 'topbar') {
+    <nav class="siwa-topbar__nav">
+      @for (item of appNavItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="siwa-topbar__nav-link--active"
+          class="siwa-topbar__nav-link"
+          [attr.title]="item.labelKey | translate"
+        >
+          <i [class]="item.icon"></i>
+          <span>{{ item.labelKey | translate }}</span>
+        </a>
+      }
+
+      <!-- Beheer-dropdown -->
+      <p-menu #adminMenu [model]="adminMenuItems()" [popup]="true" />
+      <button
+        class="siwa-topbar__nav-link siwa-topbar__nav-dropdown"
+        type="button"
+        (click)="adminMenu.toggle($event)"
+        [attr.aria-label]="'NAV.GROUP_ADMIN' | translate"
+      >
+        <i class="pi pi-th-large"></i>
+        <span>{{ 'NAV.GROUP_ADMIN' | translate }}</span>
+        <i class="pi pi-chevron-down siwa-topbar__nav-chevron"></i>
+      </button>
+    </nav>
+  }
+
+  <!-- ── Acties ────────────────────────────────────────────────────── -->
+  <div class="siwa-topbar__actions">
+    <!-- Taalwisselaar -->
+    <div class="siwa-topbar__lang">
+      @for (lang of languages; track lang.code) {
+        <button
+          class="siwa-topbar__lang-btn"
+          [class.siwa-topbar__lang-btn--active]="localeService.language() === lang.code"
+          (click)="setLanguage(lang.code)"
+          [attr.title]="lang.labelKey | translate"
+          [attr.aria-label]="lang.labelKey | translate"
+        >
+          {{ lang.flag }} {{ lang.code.toUpperCase() }}
+        </button>
+      }
+    </div>
+
+    <!-- Dark/light toggle -->
+    <p-button
+      [icon]="themeService.theme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      (onClick)="toggleTheme()"
+      [attr.aria-label]="
+        (themeService.theme() === 'dark' ? 'TOPBAR.SWITCH_LIGHT' : 'TOPBAR.SWITCH_DARK') | translate
+      "
+    />
+
+    <!-- Gebruikersmenu -->
+    <p-menu #userMenu [model]="userMenuItems()" [popup]="true" />
+    <p-button
+      icon="pi pi-user"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      (onClick)="userMenu.toggle($event)"
+      [ariaLabel]="'TOPBAR.USER_MENU' | translate"
+    />
+  </div>
+</header>

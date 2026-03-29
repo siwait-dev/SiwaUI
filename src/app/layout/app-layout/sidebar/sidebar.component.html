@@ -1,0 +1,59 @@
+<nav class="siwa-sidebar" [class.siwa-sidebar--collapsed]="collapsed()">
+  <!-- ── Header ────────────────────────────────────────────────────
+       Altijd zichtbaar, ook in collapsed-staat (60px).
+       In collapsed-staat: alleen de toggle-knop gecentreerd.
+  ──────────────────────────────────────────────────────────────── -->
+  <div class="siwa-sidebar__header">
+    <!-- Brand — verborgen in collapsed-staat -->
+    <div class="siwa-sidebar__brand-wrap">
+      <span class="siwa-sidebar__brand-icon">S</span>
+      <span class="siwa-sidebar__brand-text">SiwaUI</span>
+    </div>
+
+    <!-- Toggle — altijd zichtbaar, beheert uitklappen én inklappen -->
+    <button
+      class="siwa-sidebar__toggle"
+      type="button"
+      (click)="collapseToggle.emit()"
+      aria-label="Toggle sidebar"
+    >
+      <i class="pi pi-bars"></i>
+    </button>
+  </div>
+
+  <!-- ── Navigatie ─────────────────────────────────────────────────── -->
+  <div class="siwa-sidebar__nav-wrap">
+    @for (group of navGroups; track group.labelKey) {
+      <div class="siwa-sidebar__group">
+        <span class="siwa-sidebar__group-label">
+          {{ group.labelKey | translate }}
+        </span>
+
+        <ul class="siwa-sidebar__list">
+          @for (item of group.items; track item.route) {
+            <li>
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="siwa-sidebar__link--active"
+                class="siwa-sidebar__link"
+                [attr.title]="item.labelKey | translate"
+                [attr.aria-label]="item.labelKey | translate"
+              >
+                <i [class]="item.icon + ' siwa-sidebar__icon'"></i>
+                <span class="siwa-sidebar__label">{{ item.labelKey | translate }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────────────────── -->
+  <div class="siwa-sidebar__footer">
+    <button class="siwa-sidebar__link siwa-sidebar__link--signout" type="button">
+      <i class="pi pi-sign-out siwa-sidebar__icon"></i>
+      <span class="siwa-sidebar__label">{{ 'NAV.SIGN_OUT' | translate }}</span>
+    </button>
+  </div>
+</nav>

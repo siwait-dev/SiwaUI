@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from '../../projects/siwa-ui/src/lib/services/theme.service';
+import { LocaleService } from '../../projects/siwa-ui/src/lib/services/locale.service';
 
 @Component({
   selector: 'app-root',
@@ -9,9 +10,8 @@ import { ThemeService } from '../../projects/siwa-ui/src/lib/services/theme.serv
   styleUrl: './app.scss',
 })
 export class App {
-  protected readonly title = signal('SiwaUI');
-
   constructor() {
     inject(ThemeService).init();
+    inject(LocaleService).init();
   }
 }

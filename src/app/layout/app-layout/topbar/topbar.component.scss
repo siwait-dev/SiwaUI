@@ -1,0 +1,177 @@
+.siwa-topbar {
+  height: var(--siwa-topbar-height, 64px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  background: var(--p-surface-card);
+  border-bottom: 2px solid #1e3341;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  html.dark & {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  // Brand neemt altijd precies zijn eigen breedte
+  // Nav groeit mee, acties staan rechts
+  &__brand {
+    flex-shrink: 0;
+  }
+  &__nav {
+    flex: 1;
+  }
+  &__actions {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+}
+
+// ── Brand ──────────────────────────────────────────────────────────────────────
+.siwa-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+
+.siwa-topbar__brand-icon {
+  width: 2rem;
+  height: 2rem;
+  background: #1e3341;
+  color: #ffffff;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  html.dark & {
+    background: var(--p-primary-color);
+  }
+}
+
+.siwa-topbar__brand-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e3341;
+  white-space: nowrap;
+
+  html.dark & {
+    color: var(--p-primary-color);
+  }
+}
+
+// ── Horizontale nav ────────────────────────────────────────────────────────────
+.siwa-topbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.siwa-topbar__nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--p-text-color);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+
+  i {
+    font-size: 0.875rem;
+  }
+
+  &:hover {
+    background: var(--p-surface-hover);
+    color: #1e3341;
+    html.dark & {
+      color: var(--p-primary-color);
+    }
+  }
+
+  &--active {
+    background: color-mix(in srgb, #1e3341, transparent 90%);
+    color: #1e3341;
+    font-weight: 600;
+
+    html.dark & {
+      background: color-mix(in srgb, var(--p-primary-color), transparent 85%);
+      color: var(--p-primary-color);
+    }
+  }
+}
+
+.siwa-topbar__nav-dropdown {
+  // Dropdown-knop heeft dezelfde stijl als links
+}
+
+.siwa-topbar__nav-chevron {
+  font-size: 0.625rem !important;
+  opacity: 0.6;
+}
+
+// ── Acties ─────────────────────────────────────────────────────────────────────
+.siwa-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// ── Taalwisselaar ─────────────────────────────────────────────────────────────
+.siwa-topbar__lang {
+  display: flex;
+  gap: 2px;
+  border: 1px solid var(--p-surface-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.siwa-topbar__lang-btn {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--p-text-color);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  line-height: 1.5;
+
+  &:hover {
+    background: var(--p-surface-hover);
+  }
+
+  &--active {
+    background: #1e3341;
+    color: #ffffff;
+
+    html.dark & {
+      background: var(--p-primary-color);
+      color: var(--p-primary-contrast-color);
+    }
+
+    &:hover {
+      background: #1a2d3a;
+    }
+  }
+}

@@ -1,0 +1,39 @@
+// ── Sidebar layout ────────────────────────────────────────────────────────────
+.siwa-layout--sidebar {
+  display: flex;
+  min-height: 100vh;
+
+  app-sidebar {
+    flex-shrink: 0;
+    width: var(--siwa-sidebar-width, 260px); // expliciete fallback
+    transition: width 0.2s ease; // smooth collapse-animatie
+  }
+
+  .siwa-layout__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; // prevent flex overflow
+  }
+}
+
+// Ingeklapt: smalle iconenbalk (60px)
+.siwa-layout--collapsed {
+  app-sidebar {
+    width: 60px;
+  }
+}
+
+// ── Topbar layout ─────────────────────────────────────────────────────────────
+.siwa-layout--topbar {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// ── Gedeeld content-gebied ────────────────────────────────────────────────────
+.siwa-content {
+  flex: 1;
+  padding: 1.5rem;
+  background: var(--p-surface-ground);
+}

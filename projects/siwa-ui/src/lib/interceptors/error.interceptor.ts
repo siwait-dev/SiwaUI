@@ -19,7 +19,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       switch (error.status) {
         case 401:
-          router.navigate(['/auth/login']);
+          // Sla redirect over voor auth-endpoints (bijv. verkeerd wachtwoord):
+          // de component toont dan zelf de foutmelding.
+          if (!req.url.includes('/auth/')) {
+            void router.navigate(['/login']);
+          }
           break;
         case 403:
           router.navigate(['/errors/403']);

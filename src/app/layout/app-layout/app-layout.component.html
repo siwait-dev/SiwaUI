@@ -1,0 +1,20 @@
+@if (themeService.layout() === 'sidebar') {
+  <!-- ── Sidebar layout ─────────────────────────────────────────── -->
+  <div class="siwa-layout siwa-layout--sidebar" [class.siwa-layout--collapsed]="sidebarCollapsed()">
+    <app-sidebar [collapsed]="sidebarCollapsed()" (collapseToggle)="toggleSidebar()" />
+    <div class="siwa-layout__body">
+      <app-topbar />
+      <main class="siwa-content">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+} @else {
+  <!-- ── Topbar layout ──────────────────────────────────────────── -->
+  <div class="siwa-layout siwa-layout--topbar">
+    <app-topbar />
+    <main class="siwa-content">
+      <router-outlet />
+    </main>
+  </div>
+}

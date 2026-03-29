@@ -1,43 +1,42 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+// ── Tailwind (layer order: base → primeng → utilities) ────────────────────────
+@layer tailwind-base {
+  @tailwind base;
+}
 
-// PrimeNG theme
+@layer tailwind-utilities {
+  @tailwind utilities;
+}
+
+// Tailwind components (no layer override needed)
+@tailwind components;
+
+// ── PrimeNG icons ─────────────────────────────────────────────────────────────
 @import 'primeicons/primeicons.css';
 
-// CSS custom properties voor SiwaUI theming
+// ── CSS custom properties voor SiwaUI theming ────────────────────────────────
 :root {
   --siwa-sidebar-width: 260px;
   --siwa-topbar-height: 64px;
   --siwa-transition: 0.2s ease;
 }
 
-// Layout: sidebar
-[data-layout='sidebar'] {
-  .siwa-layout {
-    display: flex;
-  }
-  .siwa-sidebar {
-    width: var(--siwa-sidebar-width);
-    min-height: 100vh;
-  }
-  .siwa-content {
-    flex: 1;
-    padding: 1.5rem;
-  }
+// ── Global resets ─────────────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-// Layout: topbar
-[data-layout='topbar'] {
-  .siwa-topbar {
-    height: var(--siwa-topbar-height);
-  }
-  .siwa-content {
-    padding: 1.5rem;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--p-font-family, system-ui, sans-serif);
+  background: var(--p-surface-ground);
+  color: var(--p-text-color);
 }
 
-// Dark mode
+// ── Dark mode ─────────────────────────────────────────────────────────────────
 html.dark {
   color-scheme: dark;
 }

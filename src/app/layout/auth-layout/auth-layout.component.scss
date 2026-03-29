@@ -1,0 +1,13 @@
+.siwa-auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-surface-ground);
+}
+
+.siwa-auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 2rem;
+}
