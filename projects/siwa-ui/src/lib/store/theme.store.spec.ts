@@ -1,32 +1,36 @@
 import { TestBed } from '@angular/core/testing';
-import { ThemeStore } from './theme.store';
+import { provideState, provideStore } from '@ngrx/store';
+import { ThemeStoreFacade } from './theme/theme.facade';
+import { themeStoreFeature } from './theme/theme.reducer';
 
-describe('ThemeStore', () => {
-  let store: InstanceType<typeof ThemeStore>;
+describe('ThemeStoreFacade', () => {
+  let facade: ThemeStoreFacade;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    store = TestBed.inject(ThemeStore);
+    TestBed.configureTestingModule({
+      providers: [provideStore(), provideState(themeStoreFeature)],
+    });
+    facade = TestBed.inject(ThemeStoreFacade);
   });
 
   it('should start with light theme and sidebar layout', () => {
-    expect(store.theme()).toBe('light');
-    expect(store.layout()).toBe('sidebar');
+    expect(facade.theme()).toBe('light');
+    expect(facade.layout()).toBe('sidebar');
   });
 
   it('should update theme', () => {
-    store.setTheme('dark');
-    expect(store.theme()).toBe('dark');
+    facade.setTheme('dark');
+    expect(facade.theme()).toBe('dark');
   });
 
   it('should update layout', () => {
-    store.setLayout('topbar');
-    expect(store.layout()).toBe('topbar');
+    facade.setLayout('topbar');
+    expect(facade.layout()).toBe('topbar');
   });
 
   it('should update theme without affecting layout', () => {
-    store.setLayout('topbar');
-    store.setTheme('dark');
-    expect(store.layout()).toBe('topbar');
+    facade.setLayout('topbar');
+    facade.setTheme('dark');
+    expect(facade.layout()).toBe('topbar');
   });
 });

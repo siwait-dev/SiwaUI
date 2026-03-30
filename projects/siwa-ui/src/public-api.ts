@@ -30,5 +30,4 @@ export * from './lib/guards/auth.guard';
 export * from './lib/guards/role.guard';
 
 // Store
-export * from './lib/store/auth.store';
-export * from './lib/store/theme.store';
+export * from './lib/store';
