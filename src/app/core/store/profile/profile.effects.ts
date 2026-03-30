@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, withLatestFrom } from 'rxjs';
-import { ApiService } from '../../services/api.service';
+import { ProfileApiService } from '../../services/profile-api.service';
 import { ProfileActions } from './profile.actions';
 import { ProfileData } from './profile.models';
 import { selectProfile } from './profile.selectors';
@@ -11,7 +11,7 @@ import { selectProfile } from './profile.selectors';
 export class ProfileEffects {
   private readonly actions$ = inject(Actions);
   private readonly store = inject(Store);
-  private readonly api = inject(ApiService);
+  private readonly profileApi = inject(ProfileApiService);
 
   readonly enterPage$ = createEffect(() =>
     this.actions$.pipe(
@@ -24,7 +24,7 @@ export class ProfileEffects {
     this.actions$.pipe(
       ofType(ProfileActions.loadProfile),
       mergeMap(() =>
-        this.api.get<ProfileData>('auth/me').pipe(
+        this.profileApi.getProfile<ProfileData>().pipe(
           map(profile => ProfileActions.loadProfileSuccess({ profile })),
           catchError(() => of(ProfileActions.loadProfileFailure())),
         ),
@@ -37,8 +37,8 @@ export class ProfileEffects {
       ofType(ProfileActions.saveProfile),
       withLatestFrom(this.store.select(selectProfile)),
       mergeMap(([, profile]) =>
-        this.api
-          .put<void>('auth/me', {
+        this.profileApi
+          .updateProfile({
             firstName: profile.firstName,
             lastName: profile.lastName,
           })

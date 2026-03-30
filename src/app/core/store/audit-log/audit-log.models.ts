@@ -1,3 +1,5 @@
+import { PagedQuery, PagedResponse } from '../../models/api.models';
+
 export interface AuditLogDto {
   id: number;
   timestamp: string;
@@ -9,16 +11,9 @@ export interface AuditLogDto {
   durationMs: number;
 }
 
-export interface AuditPagedResponse {
-  items: AuditLogDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
+export type AuditPagedResponse = PagedResponse<AuditLogDto>;
 
-export interface AuditLogQuery {
-  page: number;
-  pageSize: number;
+export interface AuditLogQuery extends PagedQuery {
   method: string | null;
   email: string;
   path: string;

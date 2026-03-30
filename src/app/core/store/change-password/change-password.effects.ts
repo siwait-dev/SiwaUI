@@ -2,14 +2,14 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Router } from '@angular/router';
 import { catchError, delay, map, mergeMap, of, switchMap, tap } from 'rxjs';
-import { ApiService } from '../../services/api.service';
+import { AuthAccountApiService } from '../../services/auth-account-api.service';
 import { PasswordPolicyService } from '../../services/password-policy.service';
 import { ChangePasswordActions } from './change-password.actions';
 
 @Injectable()
 export class ChangePasswordEffects {
   private readonly actions$ = inject(Actions);
-  private readonly api = inject(ApiService);
+  private readonly authAccountApi = inject(AuthAccountApiService);
   private readonly router = inject(Router);
   private readonly policyService = inject(PasswordPolicyService);
 
@@ -36,7 +36,7 @@ export class ChangePasswordEffects {
     this.actions$.pipe(
       ofType(ChangePasswordActions.submit),
       mergeMap(({ currentPassword, newPassword }) =>
-        this.api.post<void>('auth/change-password', { currentPassword, newPassword }).pipe(
+        this.authAccountApi.changePassword({ currentPassword, newPassword }).pipe(
           map(() => ChangePasswordActions.submitSuccess()),
           catchError((err: { status?: number }) =>
             of(

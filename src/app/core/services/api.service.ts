@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApiQueryParams } from '../models/api.models';
 
 /**
  * ApiService — thin wrapper around HttpClient.
@@ -14,7 +15,7 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
-  get<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
+  get<T>(path: string, params?: ApiQueryParams): Observable<T> {
     return this.http.get<T>(this.url(path), { params: this.toParams(params) });
   }
 
@@ -38,7 +39,7 @@ export class ApiService {
     return `${this.base}/${path.replace(/^\//, '')}`;
   }
 
-  private toParams(obj?: Record<string, string | number | boolean>): HttpParams | undefined {
+  private toParams(obj?: ApiQueryParams): HttpParams | undefined {
     if (!obj) return undefined;
     let params = new HttpParams();
     for (const [key, value] of Object.entries(obj)) {

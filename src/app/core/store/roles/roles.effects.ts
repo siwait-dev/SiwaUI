@@ -2,14 +2,14 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, mergeMap, of } from 'rxjs';
 import { ApiErrorService } from '../../services/api-error.service';
-import { ApiService } from '../../services/api.service';
+import { RolesApiService } from '../../services/roles-api.service';
 import { RolesActions } from './roles.actions';
 import { RoleClaimsResponse } from './roles.models';
 
 @Injectable()
 export class RolesEffects {
   private readonly actions$ = inject(Actions);
-  private readonly api = inject(ApiService);
+  private readonly rolesApi = inject(RolesApiService);
   private readonly apiError = inject(ApiErrorService);
 
   readonly enterPage$ = createEffect(() =>
@@ -23,7 +23,7 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.loadRoles),
       mergeMap(() =>
-        this.api.get<{ roles: string[] }>('roles').pipe(
+        this.rolesApi.getRoles().pipe(
           map(response => RolesActions.loadRolesSuccess({ roles: response.roles ?? [] })),
           catchError(() => of(RolesActions.loadRolesFailure())),
         ),
@@ -35,7 +35,7 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.createRole),
       mergeMap(({ name }) =>
-        this.api.post<unknown>('roles', { name }).pipe(
+        this.rolesApi.createRole(name).pipe(
           map(() => RolesActions.createRoleSuccess({ role: name })),
           catchError(error =>
             of(
@@ -53,7 +53,7 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.deleteRole),
       mergeMap(({ role }) =>
-        this.api.delete<unknown>(`roles/${role}`).pipe(
+        this.rolesApi.deleteRole(role).pipe(
           map(() => RolesActions.deleteRoleSuccess({ role })),
           catchError(error =>
             of(
@@ -71,7 +71,7 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.openClaimsDialog),
       mergeMap(({ role }) =>
-        this.api.get<RoleClaimsResponse>(`roles/${encodeURIComponent(role)}/claims`).pipe(
+        this.rolesApi.getRoleClaims<RoleClaimsResponse>(role).pipe(
           map(response => RolesActions.loadClaimsSuccess({ role, claims: response.claims ?? [] })),
           catchError(error =>
             of(
@@ -92,30 +92,21 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.addClaim),
       mergeMap(({ role, claimType, claimValue }) =>
-        this.api
-          .post<unknown>(`roles/${encodeURIComponent(role)}/claims`, {
-            roleName: role,
-            type: claimType,
-            value: claimValue,
-          })
-          .pipe(
-            map(() =>
-              RolesActions.addClaimSuccess({
-                role,
-                claim: { type: claimType, value: claimValue },
+        this.rolesApi.addRoleClaim(role, claimType, claimValue).pipe(
+          map(() =>
+            RolesActions.addClaimSuccess({
+              role,
+              claim: { type: claimType, value: claimValue },
+            }),
+          ),
+          catchError(error =>
+            of(
+              RolesActions.addClaimFailure({
+                errorKey: this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIM_ADD_FAILED'),
               }),
             ),
-            catchError(error =>
-              of(
-                RolesActions.addClaimFailure({
-                  errorKey: this.apiError.getMessageKey(
-                    error,
-                    'ADMIN.ROLES.ERRORS.CLAIM_ADD_FAILED',
-                  ),
-                }),
-              ),
-            ),
           ),
+        ),
       ),
     ),
   );
@@ -124,25 +115,19 @@ export class RolesEffects {
     this.actions$.pipe(
       ofType(RolesActions.removeClaim),
       mergeMap(({ role, claim }) =>
-        this.api
-          .delete<unknown>(`roles/${encodeURIComponent(role)}/claims`, {
-            roleName: role,
-            type: claim.type,
-            value: claim.value,
-          })
-          .pipe(
-            map(() => RolesActions.removeClaimSuccess({ role, claim })),
-            catchError(error =>
-              of(
-                RolesActions.removeClaimFailure({
-                  errorKey: this.apiError.getMessageKey(
-                    error,
-                    'ADMIN.ROLES.ERRORS.CLAIM_REMOVE_FAILED',
-                  ),
-                }),
-              ),
+        this.rolesApi.removeRoleClaim(role, claim.type, claim.value).pipe(
+          map(() => RolesActions.removeClaimSuccess({ role, claim })),
+          catchError(error =>
+            of(
+              RolesActions.removeClaimFailure({
+                errorKey: this.apiError.getMessageKey(
+                  error,
+                  'ADMIN.ROLES.ERRORS.CLAIM_REMOVE_FAILED',
+                ),
+              }),
             ),
           ),
+        ),
       ),
     ),
   );

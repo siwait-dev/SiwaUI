@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, withLatestFrom } from 'rxjs';
-import { ApiService } from '../../services/api.service';
+import { PasswordPolicyApiService } from '../../services/password-policy-api.service';
 import { PasswordPolicyActions } from './password-policy.actions';
 import { PasswordPolicyModel } from './password-policy.models';
 import { selectPolicy } from './password-policy.selectors';
@@ -11,7 +11,7 @@ import { selectPolicy } from './password-policy.selectors';
 export class PasswordPolicyEffects {
   private readonly actions$ = inject(Actions);
   private readonly store = inject(Store);
-  private readonly api = inject(ApiService);
+  private readonly passwordPolicyApi = inject(PasswordPolicyApiService);
 
   readonly enterPage$ = createEffect(() =>
     this.actions$.pipe(
@@ -24,7 +24,7 @@ export class PasswordPolicyEffects {
     this.actions$.pipe(
       ofType(PasswordPolicyActions.loadPolicy),
       mergeMap(() =>
-        this.api.get<PasswordPolicyModel>('password-policy').pipe(
+        this.passwordPolicyApi.getPolicy<PasswordPolicyModel>().pipe(
           map(policy => PasswordPolicyActions.loadPolicySuccess({ policy })),
           catchError(() => of(PasswordPolicyActions.loadPolicyFailure())),
         ),
@@ -37,7 +37,7 @@ export class PasswordPolicyEffects {
       ofType(PasswordPolicyActions.savePolicy),
       withLatestFrom(this.store.select(selectPolicy)),
       mergeMap(([, policy]) =>
-        this.api.put<PasswordPolicyModel>('password-policy', policy).pipe(
+        this.passwordPolicyApi.updatePolicy(policy).pipe(
           map(savedPolicy => PasswordPolicyActions.savePolicySuccess({ policy: savedPolicy })),
           catchError(() => of(PasswordPolicyActions.savePolicyFailure())),
         ),

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { finalize, Observable, shareReplay, tap } from 'rxjs';
 import { UserClaims } from '../state/auth/auth-session';
 import { AuthFacade } from '../store/auth/auth.facade';
 import { ApiService } from './api.service';
@@ -41,6 +41,7 @@ export interface AuthResponse {
 export class AuthService {
   private readonly api = inject(ApiService);
   private readonly authFacade = inject(AuthFacade);
+  private refreshRequest$: Observable<AuthResponse> | null = null;
 
   readonly isLoggedIn = this.authFacade.isLoggedIn;
   readonly currentUser = this.authFacade.currentUser as () => UserClaims | null;
@@ -60,9 +61,19 @@ export class AuthService {
   }
 
   refreshAccessToken(refreshToken: string): Observable<AuthResponse> {
-    return this.api
-      .post<AuthResponse>('auth/refresh', { refreshToken })
-      .pipe(tap(res => this.storeTokens(res.accessToken, res.refreshToken)));
+    if (this.refreshRequest$) {
+      return this.refreshRequest$;
+    }
+
+    this.refreshRequest$ = this.api.post<AuthResponse>('auth/refresh', { refreshToken }).pipe(
+      tap(res => this.storeTokens(res.accessToken, res.refreshToken)),
+      finalize(() => {
+        this.refreshRequest$ = null;
+      }),
+      shareReplay(1),
+    );
+
+    return this.refreshRequest$;
   }
 
   register(req: RegisterRequest): Observable<void> {

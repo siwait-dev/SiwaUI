@@ -1,23 +1,5 @@
 import { Injectable } from '@angular/core';
-
-interface ApiErrorMessage {
-  code?: string;
-  message?: string;
-  technicalMessage?: string;
-  statusCode?: number;
-  type?: string;
-}
-
-interface ApiErrorPayload {
-  code?: string;
-  message?: string;
-  status?: number;
-  error?: {
-    hasError?: boolean;
-    errors?: ApiErrorMessage[];
-  };
-  errors?: ApiErrorMessage[];
-}
+import { ApiErrorMessage, ApiErrorPayload } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiErrorService {

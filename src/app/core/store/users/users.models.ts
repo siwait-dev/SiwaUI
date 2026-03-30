@@ -1,3 +1,5 @@
+import { PagedQuery, PagedResponse } from '../../models/api.models';
+
 export interface UserDto {
   userId: string;
   email: string;
@@ -10,20 +12,13 @@ export interface UserDto {
   lastLoginAt?: string;
 }
 
-export interface UserListResponse {
-  items: UserDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
+export type UserListResponse = PagedResponse<UserDto>;
 
 export interface UserRolesResponse {
   roles: string[];
 }
 
-export interface UsersQuery {
-  page: number;
-  pageSize: number;
+export interface UsersQuery extends PagedQuery {
   search: string;
   isActive: boolean | null;
 }

@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { gotoAndWait, setAuthToken } from './auth-helpers';
+import { createTestToken, gotoAndWait, setAuthToken } from './auth-helpers';
 
 export async function mockBackgroundRequests(page: Page): Promise<void> {
   await page.route('http://localhost:5115/logs/client', route => {
@@ -24,7 +24,7 @@ export async function mockBackgroundRequests(page: Page): Promise<void> {
 }
 
 export async function gotoAdminPage(page: Page, path: string): Promise<void> {
-  await setAuthToken(page);
+  await setAuthToken(page, createTestToken({ roles: ['Admin'] }));
   await mockBackgroundRequests(page);
   await gotoAndWait(page, path);
 }

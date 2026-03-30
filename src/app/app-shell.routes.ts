@@ -68,6 +68,7 @@ export const appShellRoutes: Routes = [
             providers: [provideState(usersFeature), provideEffects(UsersEffects)],
             loadComponent: () =>
               import('./pages/admin/users/users.component').then(m => m.UsersComponent),
+            data: { requiredRoles: ['Admin'] },
             title: 'User management',
           },
           {
@@ -75,6 +76,7 @@ export const appShellRoutes: Routes = [
             providers: [provideState(rolesFeature), provideEffects(RolesEffects)],
             loadComponent: () =>
               import('./pages/admin/roles/roles.component').then(m => m.RolesComponent),
+            data: { requiredRoles: ['Admin'] },
             title: 'Role management',
           },
           {
@@ -84,6 +86,7 @@ export const appShellRoutes: Routes = [
               import('./pages/admin/translations/translations.component').then(
                 m => m.TranslationsComponent,
               ),
+            data: { requiredRoles: ['Admin'] },
             title: 'Translations',
           },
           {
@@ -92,6 +95,7 @@ export const appShellRoutes: Routes = [
               import('./pages/admin/theme-settings/theme-settings.component').then(
                 m => m.ThemeSettingsComponent,
               ),
+            data: { requiredRoles: ['Admin'] },
             title: 'Theme settings',
           },
           {
@@ -101,6 +105,7 @@ export const appShellRoutes: Routes = [
               import('./pages/admin/app-settings/app-settings.component').then(
                 m => m.AppSettingsComponent,
               ),
+            data: { requiredRoles: ['Admin'] },
             title: 'App settings',
           },
           {
@@ -108,6 +113,7 @@ export const appShellRoutes: Routes = [
             providers: [provideState(auditLogFeature), provideEffects(AuditLogEffects)],
             loadComponent: () =>
               import('./pages/admin/audit-log/audit-log.component').then(m => m.AuditLogComponent),
+            data: { requiredRoles: ['Admin'] },
             title: 'Audit log',
           },
           {
@@ -117,6 +123,7 @@ export const appShellRoutes: Routes = [
               import('./pages/admin/log-viewer/log-viewer.component').then(
                 m => m.LogViewerComponent,
               ),
+            data: { requiredRoles: ['Admin'] },
             title: 'Log viewer',
           },
           {
@@ -126,6 +133,7 @@ export const appShellRoutes: Routes = [
               import('./pages/admin/password-policy/password-policy.component').then(
                 m => m.PasswordPolicyComponent,
               ),
+            data: { requiredRoles: ['Admin'] },
             title: 'Password policy',
           },
           { path: '', redirectTo: 'users', pathMatch: 'full' },

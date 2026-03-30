@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
 import {
   fromEventPattern,
   catchError,
@@ -13,7 +12,7 @@ import {
   tap,
 } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { ApiService } from '../../services/api.service';
+import { DashboardApiService } from '../../services/dashboard-api.service';
 import { SignalRService } from '../../services/signalr.service';
 import { DashboardActions } from './dashboard.actions';
 import { DashboardStats } from './dashboard.models';
@@ -26,8 +25,7 @@ interface UserRegisteredPayload {
 @Injectable()
 export class DashboardEffects {
   private readonly actions$ = inject(Actions);
-  private readonly store = inject(Store);
-  private readonly api = inject(ApiService);
+  private readonly dashboardApi = inject(DashboardApiService);
   private readonly signalR = inject(SignalRService);
   private readonly auth = inject(AuthService);
 
@@ -42,7 +40,7 @@ export class DashboardEffects {
     this.actions$.pipe(
       ofType(DashboardActions.loadStats),
       exhaustMap(() =>
-        this.api.get<DashboardStats>('dashboard/stats').pipe(
+        this.dashboardApi.getStats<DashboardStats>().pipe(
           map(stats => DashboardActions.loadStatsSuccess({ stats })),
           catchError(() => of(DashboardActions.loadStatsFailure())),
         ),

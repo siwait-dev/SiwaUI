@@ -4,9 +4,9 @@ export interface TranslationRow {
   en: string;
 }
 
-export interface FlatTranslationsResponse {
-  translations: Record<string, string>;
-}
+import { TranslationDictionaryResponse } from '../../models/api.models';
+
+export type FlatTranslationsResponse = TranslationDictionaryResponse;
 
 export interface TranslationDraft {
   key: string;

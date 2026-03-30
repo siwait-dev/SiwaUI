@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, withLatestFrom } from 'rxjs';
 import { ApiErrorService } from '../../services/api-error.service';
-import { ApiService } from '../../services/api.service';
+import { UsersApiService } from '../../services/users-api.service';
 import { UsersActions } from './users.actions';
 import { UserListResponse, UserRolesResponse } from './users.models';
 import { selectUsersQuery } from './users.selectors';
@@ -12,7 +12,7 @@ import { selectUsersQuery } from './users.selectors';
 export class UsersEffects {
   private readonly actions$ = inject(Actions);
   private readonly store = inject(Store);
-  private readonly api = inject(ApiService);
+  private readonly usersApi = inject(UsersApiService);
   private readonly apiError = inject(ApiErrorService);
 
   readonly enterPage$ = createEffect(() =>
@@ -33,25 +33,12 @@ export class UsersEffects {
     this.actions$.pipe(
       ofType(UsersActions.loadUsers),
       withLatestFrom(this.store.select(selectUsersQuery)),
-      mergeMap(([, query]) => {
-        const params: Record<string, string | number | boolean> = {
-          page: query.page,
-          pageSize: query.pageSize,
-        };
-
-        if (query.search) {
-          params['search'] = query.search;
-        }
-
-        if (query.isActive !== null) {
-          params['isActive'] = query.isActive;
-        }
-
-        return this.api.get<UserListResponse>('users', params).pipe(
+      mergeMap(([, query]) =>
+        this.usersApi.getUsers<UserListResponse>(query).pipe(
           map(response => UsersActions.loadUsersSuccess({ response })),
           catchError(() => of(UsersActions.loadUsersFailure())),
-        );
-      }),
+        ),
+      ),
     ),
   );
 
@@ -59,7 +46,7 @@ export class UsersEffects {
     this.actions$.pipe(
       ofType(UsersActions.loadRoles),
       mergeMap(() =>
-        this.api.get<{ roles: string[] }>('roles').pipe(
+        this.usersApi.getAvailableRoles().pipe(
           map(response => UsersActions.loadRolesSuccess({ roles: response.roles ?? [] })),
           catchError(() => of(UsersActions.loadRolesFailure())),
         ),
@@ -71,7 +58,7 @@ export class UsersEffects {
     this.actions$.pipe(
       ofType(UsersActions.openRolesDialog),
       mergeMap(({ user }) =>
-        this.api.get<UserRolesResponse>(`users/${user.userId}/roles`).pipe(
+        this.usersApi.getUserRoles<UserRolesResponse>(user.userId).pipe(
           map(response =>
             UsersActions.loadUserRolesSuccess({ userId: user.userId, roles: response.roles ?? [] }),
           ),
@@ -94,7 +81,7 @@ export class UsersEffects {
     this.actions$.pipe(
       ofType(UsersActions.addUserRole),
       mergeMap(({ userId, role }) =>
-        this.api.post<unknown>(`users/${userId}/roles`, { userId, roleName: role }).pipe(
+        this.usersApi.addUserRole(userId, role).pipe(
           map(() => UsersActions.addUserRoleSuccess({ userId, role })),
           catchError(error =>
             of(
@@ -112,7 +99,7 @@ export class UsersEffects {
     this.actions$.pipe(
       ofType(UsersActions.removeUserRole),
       mergeMap(({ userId, role }) =>
-        this.api.delete<unknown>(`users/${userId}/roles/${role}`).pipe(
+        this.usersApi.removeUserRole(userId, role).pipe(
           map(() => UsersActions.removeUserRoleSuccess({ userId, role })),
           catchError(error =>
             of(

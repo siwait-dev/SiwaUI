@@ -1,12 +1,30 @@
 import { Page } from '@playwright/test';
 
+interface TestTokenOptions {
+  sub?: string;
+  email?: string;
+  name?: string;
+  exp?: number;
+  roles?: string[];
+}
+
 // ── Test JWT ──────────────────────────────────────────────────────────────────
 // Geldige base64url-payload zodat decodeJwt() in AuthService correct werkt.
-const payload = Buffer.from(
-  JSON.stringify({ sub: '1', email: 'test@test.nl', name: 'Test Gebruiker', exp: 4070908800 }),
-).toString('base64url');
+export function createTestToken(options: TestTokenOptions = {}): string {
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: options.sub ?? '1',
+      email: options.email ?? 'test@test.nl',
+      name: options.name ?? 'Test Gebruiker',
+      exp: options.exp ?? 4070908800,
+      role: options.roles ?? [],
+    }),
+  ).toString('base64url');
 
-export const TEST_TOKEN = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${payload}.test-signature`;
+  return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${payload}.test-signature`;
+}
+
+export const TEST_TOKEN = createTestToken();
 
 // ── Navigatie-helper ──────────────────────────────────────────────────────────
 

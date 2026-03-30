@@ -1,3 +1,5 @@
+import { PagedQuery, PagedResponse } from '../../models/api.models';
+
 export interface ClientLogDto {
   id: number;
   level: string;
@@ -12,17 +14,11 @@ export interface ClientLogDto {
   context?: string;
 }
 
-export interface ClientLogPagedResponse {
-  items: ClientLogDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
+export interface ClientLogPagedResponse extends PagedResponse<ClientLogDto> {
   totalPages: number;
 }
 
-export interface LogViewerQuery {
-  page: number;
-  pageSize: number;
+export interface LogViewerQuery extends PagedQuery {
   level: string | null;
   userId: string;
   correlationId: string;

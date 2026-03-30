@@ -43,7 +43,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       const code = primaryError?.code ?? apiError?.code ?? 'UNKNOWN_ERROR';
       const correlationId = error.headers.get('X-Correlation-ID') ?? undefined;
 
-      logger.error(`[HTTP ${error.status}] ${code}: ${message}`, error, { correlationId });
+      logger.error(`[HTTP ${error.status}] ${code}: ${message}`, error, {
+        correlationId,
+        method: req.method,
+        requestUrl: req.urlWithParams,
+        status: primaryError?.statusCode ?? error.status,
+      });
 
       switch (error.status) {
         case 401:
