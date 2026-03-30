@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { AuthService } from '../../core/services/auth.service';
+import { ForgotPasswordFacade } from '../../core/store/forgot-password/forgot-password.facade';
 
 @Component({
   selector: 'app-forgot-password',
@@ -22,7 +22,6 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <p-card [header]="'USER.FORGOT_PASSWORD.TITLE' | translate">
       @if (sent()) {
-        <!-- Succesbericht -->
         <div class="flex flex-col gap-4">
           <p-message
             severity="success"
@@ -34,11 +33,9 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
         </div>
       } @else {
-        <!-- Formulier -->
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
           <p class="text-surface-500">{{ 'USER.FORGOT_PASSWORD.INSTRUCTION' | translate }}</p>
 
-          <!-- E-mailadres -->
           <div class="flex flex-col gap-1">
             <input
               pInputText
@@ -59,7 +56,6 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </div>
 
-          <!-- API-foutmelding -->
           @if (errorKey()) {
             <p-message severity="error" [text]="errorKey()! | translate" styleClass="w-full" />
           }
@@ -84,15 +80,28 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class ForgotPasswordComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
+  private readonly forgotPasswordFacade = inject(ForgotPasswordFacade);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.forgotPasswordFacade.loading;
   protected readonly errorKey = signal<string | null>(null);
   protected readonly sent = signal(false);
 
   readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
   });
+
+  constructor() {
+    effect(() => {
+      const feedback = this.forgotPasswordFacade.feedback();
+      if (!feedback) return;
+
+      this.sent.set(feedback.kind === 'success');
+      this.errorKey.set(
+        feedback.kind === 'error' ? (feedback.errorKey ?? 'VALIDATION.SERVER_ERROR') : null,
+      );
+      this.forgotPasswordFacade.consumeFeedback();
+    });
+  }
 
   isInvalid(field: string): boolean {
     const ctrl = this.form.get(field);
@@ -103,20 +112,9 @@ export class ForgotPasswordComponent {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.loading.set(true);
     this.errorKey.set(null);
 
     const { email } = this.form.getRawValue();
-
-    this.authService.forgotPassword({ email: email! }).subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.sent.set(true);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.errorKey.set('VALIDATION.SERVER_ERROR');
-      },
-    });
+    this.forgotPasswordFacade.submit(email ?? '');
   }
 }

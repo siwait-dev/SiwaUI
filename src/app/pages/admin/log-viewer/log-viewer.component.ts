@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -8,34 +8,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ApiService } from '../../../core/services/api.service';
+import { ClientLogDto } from '../../../core/store/log-viewer/log-viewer.models';
+import { LogViewerFacade } from '../../../core/store/log-viewer/log-viewer.facade';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
-
-interface ClientLogDto {
-  id: number;
-  level: string;
-  message: string;
-  stackTrace?: string;
-  url: string;
-  userAgent?: string;
-  userId?: string;
-  correlationId?: string;
-  timestamp: string;
-  actionTrail?: string;
-  context?: string;
-}
-
-interface ClientLogPagedResponse {
-  items: ClientLogDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
 
 @Component({
   selector: 'app-log-viewer',
-  standalone: true,
   imports: [
     TranslateModule,
     CardModule,
@@ -124,8 +102,8 @@ interface ClientLogPagedResponse {
                 <p-tag [value]="log.level" [severity]="levelSeverity(log.level)" />
               </td>
               <td class="max-w-md truncate text-sm">{{ log.message }}</td>
-              <td class="text-sm">{{ log.userId ?? 'â€”' }}</td>
-              <td class="font-mono text-sm max-w-xs truncate">{{ log.correlationId ?? 'â€”' }}</td>
+              <td class="text-sm">{{ log.userId ?? '—' }}</td>
+              <td class="font-mono text-sm max-w-xs truncate">{{ log.correlationId ?? '—' }}</td>
               <td class="font-mono text-sm max-w-xs truncate">{{ log.url }}</td>
               <td>
                 <p-button
@@ -184,13 +162,13 @@ interface ClientLogPagedResponse {
               <span class="text-sm text-surface-500">{{
                 'ADMIN.LOG_VIEWER.COL_USER' | translate
               }}</span>
-              <span>{{ selectedLog()!.userId ?? 'â€”' }}</span>
+              <span>{{ selectedLog()!.userId ?? '—' }}</span>
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm text-surface-500">{{
                 'ADMIN.LOG_VIEWER.COL_CORRELATION' | translate
               }}</span>
-              <span class="font-mono text-sm">{{ selectedLog()!.correlationId ?? 'â€”' }}</span>
+              <span class="font-mono text-sm">{{ selectedLog()!.correlationId ?? '—' }}</span>
             </div>
             <div class="flex flex-col gap-1 md:col-span-2">
               <span class="text-sm text-surface-500">{{
@@ -202,7 +180,7 @@ interface ClientLogPagedResponse {
               <span class="text-sm text-surface-500">{{
                 'ADMIN.LOG_VIEWER.COL_USER_AGENT' | translate
               }}</span>
-              <span class="text-sm break-all">{{ selectedLog()!.userAgent ?? 'â€”' }}</span>
+              <span class="text-sm break-all">{{ selectedLog()!.userAgent ?? '—' }}</span>
             </div>
           </div>
 
@@ -254,11 +232,11 @@ interface ClientLogPagedResponse {
   `,
 })
 export class LogViewerComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly logViewerFacade = inject(LogViewerFacade);
 
-  protected readonly logs = signal<ClientLogDto[]>([]);
-  protected readonly totalCount = signal(0);
-  protected readonly loading = signal(true);
+  protected readonly logs = this.logViewerFacade.logs;
+  protected readonly totalCount = this.logViewerFacade.totalCount;
+  protected readonly loading = this.logViewerFacade.loading;
   protected readonly selectedLog = signal<ClientLogDto | null>(null);
 
   protected selectedLevel: string | null = null;
@@ -278,16 +256,21 @@ export class LogViewerComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.fetchLogs(1);
+    this.logViewerFacade.enterPage();
   }
 
   protected onLazyLoad(event: TableLazyLoadEvent): void {
-    const page = event.first !== undefined ? Math.floor(event.first / this.pageSize) + 1 : 1;
-    this.fetchLogs(page);
+    const rows = event.rows ?? this.pageSize;
+    const page = event.first !== undefined ? Math.floor(event.first / rows) + 1 : 1;
+    this.pageSize = rows;
+    this.logViewerFacade.setPage(page, rows);
   }
 
   protected reload(): void {
-    this.fetchLogs(1);
+    this.logViewerFacade.setLevelFilter(this.selectedLevel);
+    this.logViewerFacade.setUserFilter(this.filterUserId);
+    this.logViewerFacade.setCorrelationFilter(this.filterCorrelationId);
+    this.logViewerFacade.setDateRange(this.filterFrom, this.filterTo);
   }
 
   protected clearFilters(): void {
@@ -296,31 +279,12 @@ export class LogViewerComponent implements OnInit {
     this.filterCorrelationId = '';
     this.filterFrom = '';
     this.filterTo = '';
-    this.fetchLogs(1);
+    this.logViewerFacade.clearFilters();
   }
 
   protected openDetails(log: ClientLogDto): void {
     this.selectedLog.set(log);
     this.detailsDialogVisible = true;
-  }
-
-  private fetchLogs(page: number): void {
-    this.loading.set(true);
-    const params: Record<string, string | number | boolean> = { page, pageSize: this.pageSize };
-    if (this.selectedLevel) params['level'] = this.selectedLevel;
-    if (this.filterUserId) params['userId'] = this.filterUserId;
-    if (this.filterCorrelationId) params['correlationId'] = this.filterCorrelationId;
-    if (this.filterFrom) params['from'] = new Date(this.filterFrom).toISOString();
-    if (this.filterTo) params['to'] = new Date(this.filterTo).toISOString();
-
-    this.api.get<ClientLogPagedResponse>('logs/client', params).subscribe({
-      next: res => {
-        this.logs.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
   }
 
   protected levelSeverity(level: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

@@ -1,14 +1,14 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
-import { AuthService } from '../../core/services/auth.service';
 import { PasswordPolicyService } from '../../core/services/password-policy.service';
+import { RegisterFacade } from '../../core/store/register/register.facade';
 
 @Component({
   selector: 'app-register',
@@ -25,7 +25,6 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
   template: `
     <p-card [header]="'USER.REGISTER.TITLE' | translate">
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
-        <!-- Voornaam -->
         <div class="flex flex-col gap-1">
           <label for="firstName" class="font-medium">{{
             'USER.REGISTER.FIRST_NAME' | translate
@@ -43,7 +42,6 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
           }
         </div>
 
-        <!-- Achternaam -->
         <div class="flex flex-col gap-1">
           <label for="lastName" class="font-medium">{{
             'USER.REGISTER.LAST_NAME' | translate
@@ -61,7 +59,6 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
           }
         </div>
 
-        <!-- E-mailadres -->
         <div class="flex flex-col gap-1">
           <label for="email" class="font-medium">{{ 'COMMON.EMAIL' | translate }}</label>
           <input
@@ -84,7 +81,6 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
           }
         </div>
 
-        <!-- Wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="password" class="font-medium">{{
             'USER.REGISTER.PASSWORD_LABEL' | translate
@@ -116,7 +112,6 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
           }
         </div>
 
-        <!-- API-foutmelding -->
         @if (errorKey()) {
           <p-message severity="error" [text]="errorKey()! | translate" styleClass="w-full" />
         }
@@ -141,11 +136,10 @@ import { PasswordPolicyService } from '../../core/services/password-policy.servi
 })
 export class RegisterComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly policyService = inject(PasswordPolicyService);
+  private readonly registerFacade = inject(RegisterFacade);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.registerFacade.loading;
   protected readonly errorKey = signal<string | null>(null);
 
   readonly form = this.fb.group({
@@ -155,21 +149,33 @@ export class RegisterComponent implements OnInit {
     password: ['', [Validators.required]],
   });
 
-  ngOnInit(): void {
-    this.policyService.getPolicy().subscribe(() => {
+  constructor() {
+    effect(() => {
+      if (!this.registerFacade.policyReady()) return;
+
       const ctrl = this.form.get('password')!;
       ctrl.setValidators([Validators.required, this.policyService.passwordValidator()]);
       ctrl.updateValueAndValidity();
     });
+
+    effect(() => {
+      const feedback = this.registerFacade.feedback();
+      if (!feedback) return;
+
+      this.errorKey.set(feedback.errorKey);
+      this.registerFacade.consumeFeedback();
+    });
   }
 
-  /** Extracts the translation key from a policy error string like 'VALIDATION.KEY:8' */
+  ngOnInit(): void {
+    this.registerFacade.enterPage();
+  }
+
   translatePolicyError(err: string): string {
     const sep = err.indexOf(':');
     return sep > 0 ? err.substring(0, sep) : err;
   }
 
-  /** Extracts params like { count: 8 } from a policy error string like 'VALIDATION.KEY:8' */
   getPolicyErrorParams(err: string): Record<string, unknown> {
     const sep = err.indexOf(':');
     return sep > 0 ? { count: err.substring(sep + 1) } : {};
@@ -184,24 +190,9 @@ export class RegisterComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.loading.set(true);
     this.errorKey.set(null);
 
     const { firstName, lastName, email, password } = this.form.getRawValue();
-
-    this.authService
-      .register({ firstName: firstName!, lastName: lastName!, email: email!, password: password! })
-      .subscribe({
-        next: () => {
-          this.loading.set(false);
-          void this.router.navigate(['/activate'], { queryParams: { email } });
-        },
-        error: (err: { status?: number }) => {
-          this.loading.set(false);
-          this.errorKey.set(
-            err?.status === 409 ? 'VALIDATION.ACCOUNT_EXISTS' : 'VALIDATION.SERVER_ERROR',
-          );
-        },
-      });
+    this.registerFacade.submit(firstName!, lastName!, email!, password!);
   }
 }

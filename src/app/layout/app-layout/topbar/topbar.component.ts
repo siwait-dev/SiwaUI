@@ -4,13 +4,13 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import { ThemeService } from '../../../../../projects/siwa-ui/src/lib/services/theme.service';
 import {
   LocaleService,
   Language,
 } from '../../../../../projects/siwa-ui/src/lib/services/locale.service';
 import { NAV_GROUPS } from '../../../core/navigation/nav-config';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeSettingsFacade } from '../../../core/store/theme-settings/theme-settings.facade';
 
 @Component({
   selector: 'app-topbar',
@@ -19,10 +19,12 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './topbar.component.scss',
 })
 export class TopbarComponent {
-  protected readonly themeService = inject(ThemeService);
   protected readonly localeService = inject(LocaleService);
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AuthService);
+  private readonly themeSettingsFacade = inject(ThemeSettingsFacade);
+  protected readonly theme = this.themeSettingsFacade.theme;
+  protected readonly layout = this.themeSettingsFacade.layout;
 
   // ── Topbar-navigatie (layout = topbar) ──────────────────────────────────────
 
@@ -67,7 +69,7 @@ export class TopbarComponent {
   ];
 
   toggleTheme(): void {
-    this.themeService.setTheme(this.themeService.theme() === 'dark' ? 'light' : 'dark');
+    this.themeSettingsFacade.setTheme(this.theme() === 'dark' ? 'light' : 'dark');
   }
 
   setLanguage(lang: Language): void {

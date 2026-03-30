@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -7,17 +7,10 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { ApiService } from '../../../core/services/api.service';
-
-interface AppConfigDto {
-  appName: string;
-  idleTimeoutEnabled: boolean;
-  idleTimeoutMinutes: number;
-}
+import { AppSettingsFacade } from '../../../core/store/app-settings/app-settings.facade';
 
 @Component({
   selector: 'app-app-settings',
-  standalone: true,
   imports: [
     TranslateModule,
     CardModule,
@@ -91,10 +84,10 @@ interface AppConfigDto {
   `,
 })
 export class AppSettingsComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly appSettingsFacade = inject(AppSettingsFacade);
 
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
+  protected readonly loading = this.appSettingsFacade.loading;
+  protected readonly saving = this.appSettingsFacade.saving;
   protected readonly saveSuccess = signal(false);
   protected readonly saveError = signal(false);
 
@@ -102,38 +95,37 @@ export class AppSettingsComponent implements OnInit {
   protected idleEnabled = true;
   protected idleMinutes = 30;
 
-  ngOnInit(): void {
-    this.api.get<AppConfigDto>('settings').subscribe({
-      next: config => {
-        this.appName = config.appName;
-        this.idleEnabled = config.idleTimeoutEnabled;
-        this.idleMinutes = config.idleTimeoutMinutes;
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
+  constructor() {
+    effect(() => {
+      const config = this.appSettingsFacade.config();
+      this.appName = config.appName;
+      this.idleEnabled = config.idleTimeoutEnabled;
+      this.idleMinutes = config.idleTimeoutMinutes;
+    });
+
+    effect(() => {
+      const feedback = this.appSettingsFacade.feedback();
+      if (!feedback) return;
+
+      this.saveSuccess.set(feedback.kind === 'saved');
+      this.saveError.set(feedback.kind === 'save-failed');
+      this.appSettingsFacade.consumeFeedback();
     });
   }
 
+  ngOnInit(): void {
+    this.appSettingsFacade.enterPage();
+  }
+
   protected save(): void {
-    this.saving.set(true);
     this.saveSuccess.set(false);
     this.saveError.set(false);
 
-    this.api
-      .put<AppConfigDto>('settings', {
-        appName: this.appName,
-        idleTimeoutEnabled: this.idleEnabled,
-        idleTimeoutMinutes: this.idleMinutes,
-      })
-      .subscribe({
-        next: () => {
-          this.saving.set(false);
-          this.saveSuccess.set(true);
-        },
-        error: () => {
-          this.saving.set(false);
-          this.saveError.set(true);
-        },
-      });
+    this.appSettingsFacade.updateDraft({
+      appName: this.appName,
+      idleTimeoutEnabled: this.idleEnabled,
+      idleTimeoutMinutes: this.idleMinutes,
+    });
+    this.appSettingsFacade.save();
   }
 }

@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -12,10 +12,9 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
-import { AuthService } from '../../core/services/auth.service';
 import { PasswordPolicyService } from '../../core/services/password-policy.service';
+import { ResetPasswordFacade } from '../../core/store/reset-password/reset-password.facade';
 
-/** Valideert dat 'confirmPassword' gelijk is aan 'newPassword'. */
 const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
   const pw = group.get('newPassword')?.value;
   const cpw = group.get('confirmPassword')?.value;
@@ -38,7 +37,6 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
         <p class="text-surface-500">{{ 'USER.RESET_PASSWORD.INSTRUCTION' | translate }}</p>
 
-        <!-- Nieuw wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="newPassword" class="font-medium">
             {{ 'USER.RESET_PASSWORD.NEW_PASSWORD' | translate }}
@@ -64,7 +62,6 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
           }
         </div>
 
-        <!-- Bevestig wachtwoord -->
         <div class="flex flex-col gap-1">
           <label for="confirmPassword" class="font-medium">
             {{ 'USER.RESET_PASSWORD.CONFIRM_PASSWORD' | translate }}
@@ -89,7 +86,6 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
           }
         </div>
 
-        <!-- API-foutmelding -->
         @if (errorKey()) {
           <p-message severity="error" [text]="errorKey()! | translate" styleClass="w-full" />
         }
@@ -111,16 +107,13 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
 })
 export class ResetPasswordComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly policyService = inject(PasswordPolicyService);
+  private readonly resetPasswordFacade = inject(ResetPasswordFacade);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.resetPasswordFacade.loading;
   protected readonly errorKey = signal<string | null>(null);
-
-  private email = '';
-  private token = '';
 
   readonly form = this.fb.group(
     {
@@ -130,30 +123,42 @@ export class ResetPasswordComponent implements OnInit {
     { validators: passwordMatchValidator },
   );
 
-  ngOnInit(): void {
-    this.email = this.route.snapshot.queryParamMap.get('email') ?? '';
-    this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
+  constructor() {
+    effect(() => {
+      if (!this.resetPasswordFacade.policyReady()) return;
 
-    if (!this.email || !this.token) {
-      void this.router.navigate(['/forgot-password']);
-      return;
-    }
-
-    // Laad beleid en stel dynamische validator in
-    this.policyService.getPolicy().subscribe(() => {
       const ctrl = this.form.get('newPassword')!;
       ctrl.setValidators([Validators.required, this.policyService.passwordValidator()]);
       ctrl.updateValueAndValidity();
     });
+
+    effect(() => {
+      const feedback = this.resetPasswordFacade.feedback();
+      if (!feedback) return;
+
+      this.errorKey.set(feedback.errorKey);
+      this.resetPasswordFacade.consumeFeedback();
+    });
   }
 
-  /** Extracts the translation key from a policy error string like 'VALIDATION.KEY:8' */
+  ngOnInit(): void {
+    const email = this.route.snapshot.queryParamMap.get('email') ?? '';
+    const token = this.route.snapshot.queryParamMap.get('token') ?? '';
+
+    if (!email || !token) {
+      void this.router.navigate(['/forgot-password']);
+      return;
+    }
+
+    this.resetPasswordFacade.setRequestContext(email, token);
+    this.resetPasswordFacade.enterPage();
+  }
+
   translatePolicyError(err: string): string {
     const sep = err.indexOf(':');
     return sep > 0 ? err.substring(0, sep) : err;
   }
 
-  /** Extracts params like { count: 8 } from a policy error string like 'VALIDATION.KEY:8' */
   getPolicyErrorParams(err: string): Record<string, unknown> {
     const sep = err.indexOf(':');
     return sep > 0 ? { count: err.substring(sep + 1) } : {};
@@ -174,28 +179,13 @@ export class ResetPasswordComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.loading.set(true);
     this.errorKey.set(null);
 
     const { newPassword } = this.form.getRawValue();
-
-    this.authService
-      .resetPassword({ email: this.email, token: this.token, newPassword: newPassword! })
-      .subscribe({
-        next: () => {
-          this.loading.set(false);
-          void this.router.navigate(['/login'], {
-            queryParams: { reset: 'success' },
-          });
-        },
-        error: (err: { status?: number }) => {
-          this.loading.set(false);
-          this.errorKey.set(
-            err?.status === 400 || err?.status === 404
-              ? 'VALIDATION.INVALID_RESET_TOKEN'
-              : 'VALIDATION.SERVER_ERROR',
-          );
-        },
-      });
+    this.resetPasswordFacade.submit(
+      this.resetPasswordFacade.email(),
+      this.resetPasswordFacade.token(),
+      newPassword ?? '',
+    );
   }
 }

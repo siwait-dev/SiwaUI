@@ -1,12 +1,18 @@
 import { TestBed } from '@angular/core/testing';
+import { provideEffects } from '@ngrx/effects';
+import { provideState, provideStore } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { TranslationsComponent } from './translations.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { TranslationsEffects } from '../../../core/store/translations/translations.effects';
+import { translationsFeature } from '../../../core/store/translations/translations.reducer';
 
 describe('TranslationsComponent', () => {
+  let confirmSpy: ReturnType<typeof vi.fn>;
+
   const api = {
     get: vi.fn(),
     post: vi.fn(),
@@ -17,16 +23,12 @@ describe('TranslationsComponent', () => {
     getMessageKey: vi.fn(),
   };
 
-  const messageService = {
-    add: vi.fn(),
-  };
-
   beforeEach(async () => {
+    confirmSpy = vi.fn();
     api.get.mockReset();
     api.post.mockReset();
     api.delete.mockReset();
     apiError.getMessageKey.mockReset();
-    messageService.add.mockReset();
 
     api.get.mockImplementation((url: string) => {
       if (url === 'translations/nl/flat') {
@@ -47,10 +49,17 @@ describe('TranslationsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [TranslationsComponent, TranslateModule.forRoot()],
       providers: [
+        provideStore(),
+        provideState(translationsFeature),
+        provideEffects(TranslationsEffects),
         { provide: ApiService, useValue: api },
         { provide: ApiErrorService, useValue: apiError },
-        { provide: MessageService, useValue: messageService },
-        ConfirmationService,
+        {
+          provide: ConfirmationService,
+          useValue: {
+            confirm: confirmSpy,
+          },
+        },
       ],
     }).compileComponents();
   });
@@ -97,7 +106,7 @@ describe('TranslationsComponent', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('saves nl and en translations and reloads the list', () => {
+  it('saves nl and en translations and updates the list through the store', async () => {
     const fixture = TestBed.createComponent(TranslationsComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
@@ -109,6 +118,9 @@ describe('TranslationsComponent', () => {
     component['editEn'] = 'Register';
 
     component['saveTranslation']();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(api.post).toHaveBeenCalledWith('translations', {
       key: 'USER.REGISTER.TITLE',
@@ -123,10 +135,15 @@ describe('TranslationsComponent', () => {
       module: 'User',
     });
     expect(component['editDialogVisible']).toBe(false);
-    expect(api.get).toHaveBeenCalledTimes(4);
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(component['rows']()).toContainEqual({
+      key: 'USER.REGISTER.TITLE',
+      nl: 'Registreren',
+      en: 'Register',
+    });
   });
 
-  it('shows mapped delete error feedback when removing a translation fails', () => {
+  it('shows mapped delete error feedback when removing a translation fails', async () => {
     api.delete.mockReset();
     api.delete.mockReturnValueOnce(of({})).mockReturnValueOnce(throwError(() => ({ status: 500 })));
     apiError.getMessageKey.mockReturnValue('ADMIN.TRANSLATIONS.ERRORS.DELETE_FAILED');
@@ -134,20 +151,20 @@ describe('TranslationsComponent', () => {
     const fixture = TestBed.createComponent(TranslationsComponent);
     const component = fixture.componentInstance;
     const translate = TestBed.inject(TranslateService);
+    const messageService = fixture.debugElement.injector.get(MessageService);
+    const addSpy = vi.spyOn(messageService, 'add');
     vi.spyOn(translate, 'instant').mockImplementation((key: string | string[]) =>
       Array.isArray(key) ? key[0] : key,
     );
     fixture.detectChanges();
 
-    component['confirmDelete']({ key: 'USER.LOGIN.TITLE', nl: 'Inloggen', en: 'Login' });
-    const confirmation = TestBed.inject(ConfirmationService) as ConfirmationService & {
-      requireConfirmation$?: { value: { accept?: () => void } };
-    };
-
-    confirmation.requireConfirmation$?.value.accept?.();
+    component['deleteTranslation']({ key: 'USER.LOGIN.TITLE', nl: 'Inloggen', en: 'Login' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(apiError.getMessageKey).toHaveBeenCalled();
-    expect(messageService.add).toHaveBeenCalledWith({
+    expect(addSpy).toHaveBeenCalledWith({
       severity: 'error',
       summary: 'ADMIN.TRANSLATIONS.ERRORS.DELETE_FAILED',
     });

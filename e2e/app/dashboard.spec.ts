@@ -49,7 +49,7 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
     await expect(page.getByText('42')).toBeVisible();
     await expect(page.getByText('17')).toBeVisible();
-    await expect(page.getByText('8')).toBeVisible();
+    await expect(page.getByText('8', { exact: true })).toBeVisible();
   });
 
   test('toont recente activiteit', async ({ page }) => {

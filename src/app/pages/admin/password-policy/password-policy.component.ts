@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -6,12 +6,11 @@ import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageModule } from 'primeng/message';
-import { ApiService } from '../../../core/services/api.service';
 import { PasswordPolicy } from '../../../core/services/password-policy.service';
+import { PasswordPolicyFacade } from '../../../core/store/password-policy/password-policy.facade';
 
 @Component({
   selector: 'app-password-policy',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     TranslateModule,
@@ -29,10 +28,8 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
         <p class="text-surface-500">{{ 'COMMON.LOADING' | translate }}</p>
       } @else {
         <form [formGroup]="form" (ngSubmit)="save()" novalidate class="flex flex-col gap-6">
-          <!-- Complexity -->
           <p-card [header]="'ADMIN.PASSWORD_POLICY.COMPLEXITY' | translate">
             <div class="flex flex-col gap-4">
-              <!-- Min length -->
               <div class="flex flex-col gap-1">
                 <label class="font-medium">{{
                   'ADMIN.PASSWORD_POLICY.MIN_LENGTH' | translate
@@ -52,7 +49,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 }
               </div>
 
-              <!-- Require digit -->
               <div class="flex items-center gap-3">
                 <p-checkbox formControlName="requireDigit" [binary]="true" inputId="requireDigit" />
                 <div>
@@ -65,7 +61,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 </div>
               </div>
 
-              <!-- Require uppercase -->
               <div class="flex items-center gap-3">
                 <p-checkbox
                   formControlName="requireUppercase"
@@ -82,7 +77,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 </div>
               </div>
 
-              <!-- Require special character -->
               <div class="flex items-center gap-3">
                 <p-checkbox
                   formControlName="requireNonAlphanumeric"
@@ -101,10 +95,8 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
             </div>
           </p-card>
 
-          <!-- Expiry -->
           <p-card [header]="'ADMIN.PASSWORD_POLICY.EXPIRY' | translate">
             <div class="flex flex-col gap-4">
-              <!-- Max age days -->
               <div class="flex flex-col gap-1">
                 <label class="font-medium">{{
                   'ADMIN.PASSWORD_POLICY.MAX_AGE_DAYS' | translate
@@ -120,7 +112,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
                 />
               </div>
 
-              <!-- Refresh token expiration days -->
               <div class="flex flex-col gap-1">
                 <label class="font-medium">{{
                   'ADMIN.PASSWORD_POLICY.REFRESH_TOKEN_DAYS' | translate
@@ -138,7 +129,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
             </div>
           </p-card>
 
-          <!-- History -->
           <p-card [header]="'ADMIN.PASSWORD_POLICY.HISTORY' | translate">
             <div class="flex flex-col gap-1">
               <label class="font-medium">{{
@@ -156,7 +146,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
             </div>
           </p-card>
 
-          <!-- Breached passwords -->
           <p-card [header]="'ADMIN.PASSWORD_POLICY.BREACHED' | translate">
             <div class="flex items-center gap-3">
               <p-checkbox
@@ -170,7 +159,6 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
             </div>
           </p-card>
 
-          <!-- Success / error messages -->
           @if (saveSuccess()) {
             <p-message
               severity="success"
@@ -200,10 +188,10 @@ import { PasswordPolicy } from '../../../core/services/password-policy.service';
 })
 export class PasswordPolicyComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
+  private readonly passwordPolicyFacade = inject(PasswordPolicyFacade);
 
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
+  protected readonly loading = this.passwordPolicyFacade.loading;
+  protected readonly saving = this.passwordPolicyFacade.saving;
   protected readonly saveSuccess = signal(false);
   protected readonly saveError = signal(false);
 
@@ -218,19 +206,24 @@ export class PasswordPolicyComponent implements OnInit {
     refreshTokenExpirationDays: [7, [Validators.required, Validators.min(1)]],
   });
 
-  ngOnInit(): void {
-    this.api.get<PasswordPolicy>('password-policy').subscribe({
-      next: policy => {
-        // Toon het formulier eerst zodat alle PrimeNG-componenten in de DOM zijn,
-        // dan pas patchValue aanroepen zodat writeValue() correct wordt verwerkt.
-        this.loading.set(false);
-        this.form.patchValue(policy);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.saveError.set(true);
-      },
+  constructor() {
+    effect(() => {
+      const policy = this.passwordPolicyFacade.policy();
+      this.form.patchValue(policy, { emitEvent: false });
     });
+
+    effect(() => {
+      const feedback = this.passwordPolicyFacade.feedback();
+      if (!feedback) return;
+
+      this.saveSuccess.set(feedback.kind === 'saved');
+      this.saveError.set(feedback.kind === 'save-failed' || feedback.kind === 'load-failed');
+      this.passwordPolicyFacade.consumeFeedback();
+    });
+  }
+
+  ngOnInit(): void {
+    this.passwordPolicyFacade.enterPage();
   }
 
   isInvalid(field: string): boolean {
@@ -242,21 +235,11 @@ export class PasswordPolicyComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.saving.set(true);
     this.saveSuccess.set(false);
     this.saveError.set(false);
 
     const payload = this.form.getRawValue() as PasswordPolicy;
-
-    this.api.put<void>('password-policy', payload).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.saveSuccess.set(true);
-      },
-      error: () => {
-        this.saving.set(false);
-        this.saveError.set(true);
-      },
-    });
+    this.passwordPolicyFacade.updateDraft(payload);
+    this.passwordPolicyFacade.save();
   }
 }

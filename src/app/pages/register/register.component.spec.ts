@@ -1,57 +1,49 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
 import { RegisterComponent } from './register.component';
-import { AuthService } from '../../core/services/auth.service';
 import { PasswordPolicyService } from '../../core/services/password-policy.service';
+import { RegisterFacade } from '../../core/store/register/register.facade';
 
 describe('RegisterComponent', () => {
-  const authService = {
-    register: vi.fn(),
-  };
-
   const passwordPolicyService = {
-    getPolicy: vi.fn(),
     passwordValidator: vi.fn(),
   };
 
-  beforeEach(async () => {
-    authService.register.mockReset();
-    passwordPolicyService.getPolicy.mockReset();
-    passwordPolicyService.passwordValidator.mockReset();
+  const registerFacade = {
+    policyReady: vi.fn(),
+    loading: vi.fn(),
+    feedback: vi.fn(),
+    enterPage: vi.fn(),
+    submit: vi.fn(),
+    consumeFeedback: vi.fn(),
+  };
 
-    passwordPolicyService.getPolicy.mockReturnValue(
-      of({
-        minLength: 8,
-        requireDigit: true,
-        requireUppercase: true,
-        requireNonAlphanumeric: true,
-        maxAgeDays: 90,
-        historyCount: 5,
-        checkBreachedPasswords: false,
-        refreshTokenExpirationDays: 7,
-      }),
-    );
+  beforeEach(async () => {
+    passwordPolicyService.passwordValidator.mockReset();
+    registerFacade.policyReady.mockReset();
+    registerFacade.loading.mockReset();
+    registerFacade.feedback.mockReset();
+    registerFacade.enterPage.mockReset();
+    registerFacade.submit.mockReset();
+    registerFacade.consumeFeedback.mockReset();
+
     passwordPolicyService.passwordValidator.mockReturnValue(() => null);
+    registerFacade.policyReady.mockReturnValue(true);
+    registerFacade.loading.mockReturnValue(false);
+    registerFacade.feedback.mockReturnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [RegisterComponent, TranslateModule.forRoot()],
       providers: [
         provideRouter([]),
         {
-          provide: AuthService,
-          useValue: authService,
-        },
-        {
           provide: PasswordPolicyService,
           useValue: passwordPolicyService,
         },
         {
-          provide: Router,
-          useValue: {
-            navigate: vi.fn().mockResolvedValue(true),
-          },
+          provide: RegisterFacade,
+          useValue: registerFacade,
         },
       ],
     }).compileComponents();
@@ -61,7 +53,7 @@ describe('RegisterComponent', () => {
     const fixture = TestBed.createComponent(RegisterComponent);
     fixture.detectChanges();
 
-    expect(passwordPolicyService.getPolicy).toHaveBeenCalled();
+    expect(registerFacade.enterPage).toHaveBeenCalled();
     expect(passwordPolicyService.passwordValidator).toHaveBeenCalled();
   });
 
@@ -72,40 +64,10 @@ describe('RegisterComponent', () => {
 
     component.submit();
 
-    expect(authService.register).not.toHaveBeenCalled();
+    expect(registerFacade.submit).not.toHaveBeenCalled();
   });
 
-  it('navigates to activation after a successful registration', () => {
-    authService.register.mockReturnValue(of(void 0));
-
-    const fixture = TestBed.createComponent(RegisterComponent);
-    const component = fixture.componentInstance;
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
-    fixture.detectChanges();
-
-    component.form.setValue({
-      firstName: 'Mohamed',
-      lastName: 'Ben Moussa',
-      email: 'user@example.com',
-      password: 'Password1!',
-    });
-    component.submit();
-
-    expect(authService.register).toHaveBeenCalledWith({
-      firstName: 'Mohamed',
-      lastName: 'Ben Moussa',
-      email: 'user@example.com',
-      password: 'Password1!',
-    });
-    expect(navigateSpy).toHaveBeenCalledWith(['/activate'], {
-      queryParams: { email: 'user@example.com' },
-    });
-  });
-
-  it('shows account exists on a 409 error', () => {
-    authService.register.mockReturnValue(throwError(() => ({ status: 409 })));
-
+  it('submits the registration through the facade', () => {
     const fixture = TestBed.createComponent(RegisterComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
@@ -117,7 +79,26 @@ describe('RegisterComponent', () => {
       password: 'Password1!',
     });
     component.submit();
+
+    expect(registerFacade.submit).toHaveBeenCalledWith(
+      'Mohamed',
+      'Ben Moussa',
+      'user@example.com',
+      'Password1!',
+    );
+  });
+
+  it('shows facade feedback as an error key', () => {
+    registerFacade.feedback.mockReturnValue({
+      kind: 'error',
+      errorKey: 'VALIDATION.ACCOUNT_EXISTS',
+    });
+
+    const fixture = TestBed.createComponent(RegisterComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
 
     expect(component['errorKey']()).toBe('VALIDATION.ACCOUNT_EXISTS');
+    expect(registerFacade.consumeFeedback).toHaveBeenCalled();
   });
 });

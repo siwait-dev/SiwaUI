@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -8,30 +8,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ApiService } from '../../../core/services/api.service';
+import { AuditLogDto } from '../../../core/store/audit-log/audit-log.models';
+import { AuditLogFacade } from '../../../core/store/audit-log/audit-log.facade';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
-
-interface AuditLogDto {
-  id: number;
-  timestamp: string;
-  method: string;
-  path: string;
-  email?: string;
-  ipAddress?: string;
-  statusCode: number;
-  durationMs: number;
-}
-
-interface AuditPagedResponse {
-  items: AuditLogDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
 
 @Component({
   selector: 'app-audit-log',
-  standalone: true,
   imports: [
     TranslateModule,
     CardModule,
@@ -120,11 +102,11 @@ interface AuditPagedResponse {
                 <p-tag [value]="log.method" [severity]="methodSeverity(log.method)" />
               </td>
               <td class="font-mono text-sm max-w-xs truncate">{{ log.path }}</td>
-              <td class="text-sm">{{ log.email ?? 'â€”' }}</td>
+              <td class="text-sm">{{ log.email ?? '—' }}</td>
               <td>
                 <p-tag [value]="'' + log.statusCode" [severity]="statusSeverity(log.statusCode)" />
               </td>
-              <td class="text-sm">{{ log.ipAddress ?? 'â€”' }}</td>
+              <td class="text-sm">{{ log.ipAddress ?? '—' }}</td>
               <td>
                 <p-button
                   [label]="'ADMIN.AUDIT_LOG.DETAILS' | translate"
@@ -215,11 +197,11 @@ interface AuditPagedResponse {
   `,
 })
 export class AuditLogComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly auditLogFacade = inject(AuditLogFacade);
 
-  protected readonly logs = signal<AuditLogDto[]>([]);
-  protected readonly totalCount = signal(0);
-  protected readonly loading = signal(true);
+  protected readonly logs = this.auditLogFacade.logs;
+  protected readonly totalCount = this.auditLogFacade.totalCount;
+  protected readonly loading = this.auditLogFacade.loading;
   protected readonly selectedLog = signal<AuditLogDto | null>(null);
 
   protected selectedMethod: string | null = null;
@@ -239,17 +221,22 @@ export class AuditLogComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.fetchLogs(1);
+    this.auditLogFacade.enterPage();
   }
 
   protected onLazyLoad(event: TableLazyLoadEvent): void {
-    const page = event.first !== undefined ? Math.floor(event.first / this.pageSize) + 1 : 1;
+    const rows = event.rows ?? this.pageSize;
+    const page = event.first !== undefined ? Math.floor(event.first / rows) + 1 : 1;
     this.currentPage = page;
-    this.fetchLogs(page);
+    this.pageSize = rows;
+    this.auditLogFacade.setPage(page, rows);
   }
 
   protected reload(): void {
-    this.fetchLogs(1);
+    this.auditLogFacade.setMethodFilter(this.selectedMethod);
+    this.auditLogFacade.setEmailFilter(this.filterEmail);
+    this.auditLogFacade.setPathFilter(this.filterPath);
+    this.auditLogFacade.setDateRange(this.filterFrom, this.filterTo);
   }
 
   protected clearFilters(): void {
@@ -258,31 +245,12 @@ export class AuditLogComponent implements OnInit {
     this.filterPath = '';
     this.filterFrom = '';
     this.filterTo = '';
-    this.fetchLogs(1);
+    this.auditLogFacade.clearFilters();
   }
 
   protected openDetails(log: AuditLogDto): void {
     this.selectedLog.set(log);
     this.detailsDialogVisible = true;
-  }
-
-  private fetchLogs(page: number): void {
-    this.loading.set(true);
-    const params: Record<string, string | number | boolean> = { page, pageSize: this.pageSize };
-    if (this.selectedMethod) params['method'] = this.selectedMethod;
-    if (this.filterEmail) params['email'] = this.filterEmail;
-    if (this.filterPath) params['path'] = this.filterPath;
-    if (this.filterFrom) params['from'] = new Date(this.filterFrom).toISOString();
-    if (this.filterTo) params['to'] = new Date(this.filterTo).toISOString();
-
-    this.api.get<AuditPagedResponse>('audit', params).subscribe({
-      next: res => {
-        this.logs.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
   }
 
   protected methodSeverity(method: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

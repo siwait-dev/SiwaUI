@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -7,14 +7,14 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
-import { ApiService } from '../../core/services/api.service';
 import { PasswordPolicyService } from '../../core/services/password-policy.service';
+import { ChangePasswordFacade } from '../../core/store/change-password/change-password.facade';
 
 function passwordMatchValidator(): ValidatorFn {
   return (group: AbstractControl): ValidationErrors | null => {
@@ -26,7 +26,6 @@ function passwordMatchValidator(): ValidatorFn {
 
 @Component({
   selector: 'app-change-password',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     TranslateModule,
@@ -40,7 +39,6 @@ function passwordMatchValidator(): ValidatorFn {
       <div class="w-full max-w-md">
         <p-card [header]="'USER.CHANGE_PASSWORD.TITLE' | translate">
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="flex flex-col gap-4">
-            <!-- Expired password warning -->
             @if (isExpired) {
               <p-message
                 severity="warn"
@@ -49,7 +47,6 @@ function passwordMatchValidator(): ValidatorFn {
               />
             }
 
-            <!-- Current password -->
             <div class="flex flex-col gap-1">
               <label for="currentPassword" class="font-medium">
                 {{ 'USER.CHANGE_PASSWORD.CURRENT_PASSWORD' | translate }}
@@ -68,7 +65,6 @@ function passwordMatchValidator(): ValidatorFn {
               }
             </div>
 
-            <!-- New password -->
             <div class="flex flex-col gap-1">
               <label for="newPassword" class="font-medium">
                 {{ 'USER.CHANGE_PASSWORD.NEW_PASSWORD' | translate }}
@@ -96,7 +92,6 @@ function passwordMatchValidator(): ValidatorFn {
               }
             </div>
 
-            <!-- Confirm password -->
             <div class="flex flex-col gap-1">
               <label for="confirmPassword" class="font-medium">
                 {{ 'USER.CHANGE_PASSWORD.CONFIRM_PASSWORD' | translate }}
@@ -121,7 +116,6 @@ function passwordMatchValidator(): ValidatorFn {
               }
             </div>
 
-            <!-- Success message -->
             @if (successMessage()) {
               <p-message
                 severity="success"
@@ -130,7 +124,6 @@ function passwordMatchValidator(): ValidatorFn {
               />
             }
 
-            <!-- API error message -->
             @if (errorKey()) {
               <p-message severity="error" [text]="errorKey()! | translate" styleClass="w-full" />
             }
@@ -150,12 +143,11 @@ function passwordMatchValidator(): ValidatorFn {
 })
 export class ChangePasswordComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly api = inject(ApiService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly policyService = inject(PasswordPolicyService);
+  private readonly changePasswordFacade = inject(ChangePasswordFacade);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.changePasswordFacade.loading;
   protected readonly errorKey = signal<string | null>(null);
   protected readonly successMessage = signal(false);
 
@@ -170,15 +162,32 @@ export class ChangePasswordComponent implements OnInit {
     { validators: passwordMatchValidator() },
   );
 
-  ngOnInit(): void {
-    const reason = this.route.snapshot.queryParamMap.get('reason');
-    this.isExpired = reason === 'expired';
+  constructor() {
+    effect(() => {
+      if (!this.changePasswordFacade.policyReady()) return;
 
-    this.policyService.getPolicy().subscribe(() => {
       const ctrl = this.form.get('newPassword')!;
       ctrl.setValidators([Validators.required, this.policyService.passwordValidator()]);
       ctrl.updateValueAndValidity();
     });
+
+    effect(() => {
+      const current = this.changePasswordFacade.feedback();
+      if (!current) return;
+
+      this.successMessage.set(current.kind === 'success');
+      this.errorKey.set(
+        current.kind === 'error' ? (current.errorKey ?? 'VALIDATION.SERVER_ERROR') : null,
+      );
+      this.changePasswordFacade.consumeFeedback();
+    });
+  }
+
+  ngOnInit(): void {
+    const reason = this.route.snapshot.queryParamMap.get('reason');
+    this.isExpired = reason === 'expired';
+
+    this.changePasswordFacade.enterPage();
   }
 
   isInvalid(field: string): boolean {
@@ -195,7 +204,6 @@ export class ChangePasswordComponent implements OnInit {
   policyErrors(): string[] {
     const errors = this.form.get('newPassword')?.errors?.['passwordPolicy'] as string[] | undefined;
     if (!errors) return [];
-    // Strip parameter suffix (e.g. "VALIDATION.PASSWORD_MIN_LENGTH:8" â†’ key only)
     return errors.map(e => e.split(':')[0]);
   }
 
@@ -212,29 +220,10 @@ export class ChangePasswordComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.loading.set(true);
     this.errorKey.set(null);
     this.successMessage.set(false);
 
     const { currentPassword, newPassword } = this.form.getRawValue();
-
-    this.api.post<void>('auth/change-password', { currentPassword, newPassword }).subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.successMessage.set(true);
-
-        setTimeout(() => {
-          void this.router.navigate(['/app/dashboard']);
-        }, 1500);
-      },
-      error: (err: { status?: number }) => {
-        this.loading.set(false);
-        if (err?.status === 400) {
-          this.errorKey.set('VALIDATION.INVALID_CREDENTIALS');
-        } else {
-          this.errorKey.set('VALIDATION.SERVER_ERROR');
-        }
-      },
-    });
+    this.changePasswordFacade.submit(currentPassword ?? '', newPassword ?? '');
   }
 }

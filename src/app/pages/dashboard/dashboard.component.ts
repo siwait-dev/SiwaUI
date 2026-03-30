@@ -1,32 +1,14 @@
-﻿import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { CardModule } from 'primeng/card';
-import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
+import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
-import { ApiService } from '../../core/services/api.service';
-import { SignalRService } from '../../core/services/signalr.service';
-import { AuthService } from '../../core/services/auth.service';
+import { TagModule } from 'primeng/tag';
 import { SiwaDatePipe } from '../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
-
-interface DashboardStats {
-  totalUsers: number;
-  activeThisWeek: number;
-  auditLast24h: number;
-  recentActivity: RecentActivityItem[];
-}
-
-interface RecentActivityItem {
-  timestamp: string;
-  userEmail: string | null;
-  method: string;
-  path: string;
-  statusCode: number;
-}
+import { DashboardFacade } from '../../core/store/dashboard/dashboard.facade';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [TranslateModule, CardModule, TagModule, BadgeModule, TableModule, SiwaDatePipe],
   template: `
     <div class="flex flex-col gap-6">
@@ -34,12 +16,11 @@ interface RecentActivityItem {
         <h1 class="text-2xl font-bold">{{ 'APP.DASHBOARD.TITLE' | translate }}</h1>
         <p-tag
           [value]="'APP.DASHBOARD.LIVE' | translate"
-          severity="success"
+          [severity]="liveConnected() ? 'success' : 'secondary'"
           icon="pi pi-circle-fill"
         />
       </div>
 
-      <!-- Stat cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <p-card>
           <div class="flex items-center gap-4">
@@ -50,7 +31,7 @@ interface RecentActivityItem {
             </div>
             <div>
               <p class="text-surface-500 text-sm">{{ 'APP.DASHBOARD.TOTAL_USERS' | translate }}</p>
-              <p class="text-2xl font-bold">{{ stats()?.totalUsers ?? 'â€“' }}</p>
+              <p class="text-2xl font-bold">{{ stats()?.totalUsers ?? '-' }}</p>
             </div>
           </div>
         </p-card>
@@ -66,7 +47,7 @@ interface RecentActivityItem {
               <p class="text-surface-500 text-sm">
                 {{ 'APP.DASHBOARD.ACTIVE_THIS_WEEK' | translate }}
               </p>
-              <p class="text-2xl font-bold">{{ stats()?.activeThisWeek ?? 'â€“' }}</p>
+              <p class="text-2xl font-bold">{{ stats()?.activeThisWeek ?? '-' }}</p>
             </div>
           </div>
         </p-card>
@@ -82,13 +63,12 @@ interface RecentActivityItem {
               <p class="text-surface-500 text-sm">
                 {{ 'APP.DASHBOARD.AUDIT_LAST_24H' | translate }}
               </p>
-              <p class="text-2xl font-bold">{{ stats()?.auditLast24h ?? 'â€“' }}</p>
+              <p class="text-2xl font-bold">{{ stats()?.auditLast24h ?? '-' }}</p>
             </div>
           </div>
         </p-card>
       </div>
 
-      <!-- Recent activity -->
       <p-card [header]="'APP.DASHBOARD.RECENT_ACTIVITY' | translate">
         @if (stats()?.recentActivity?.length) {
           <p-table [value]="stats()!.recentActivity" [paginator]="false">
@@ -105,7 +85,7 @@ interface RecentActivityItem {
                 <td class="text-sm whitespace-nowrap">
                   {{ item.timestamp | siwaDate: 'datetime' }}
                 </td>
-                <td class="text-sm">{{ item.userEmail ?? 'â€“' }}</td>
+                <td class="text-sm">{{ item.userEmail ?? '-' }}</td>
                 <td class="text-sm font-mono">{{ item.method }} {{ item.path }}</td>
                 <td>
                   <p-tag
@@ -123,7 +103,6 @@ interface RecentActivityItem {
         }
       </p-card>
 
-      <!-- Live notifications -->
       @if (liveNotifications().length > 0) {
         <p-card [header]="'APP.DASHBOARD.LIVE_NOTIFICATIONS' | translate">
           <ul class="flex flex-col gap-2">
@@ -146,42 +125,18 @@ interface RecentActivityItem {
   `,
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  private readonly api = inject(ApiService);
-  private readonly signalR = inject(SignalRService);
-  private readonly auth = inject(AuthService);
+  private readonly dashboardFacade = inject(DashboardFacade);
 
-  protected readonly stats = signal<DashboardStats | null>(null);
-  protected readonly liveNotifications = signal<{ email: string; time: Date }[]>([]);
+  protected readonly stats = this.dashboardFacade.stats;
+  protected readonly loading = this.dashboardFacade.loading;
+  protected readonly liveNotifications = this.dashboardFacade.liveNotifications;
+  protected readonly liveConnected = this.dashboardFacade.liveConnected;
 
-  async ngOnInit(): Promise<void> {
-    // Load stats via REST
-    this.api.get<DashboardStats>('dashboard/stats').subscribe({
-      next: s => this.stats.set(s),
-    });
-
-    // Connect SignalR if logged in
-    if (this.auth.isLoggedIn()) {
-      try {
-        await this.signalR.connect();
-
-        // Listen for new user registrations (admins only â€” hub only sends to "admins" group)
-        this.signalR.on('UserRegistered', (payload: unknown) => {
-          const p = payload as { email: string; registeredAt: string };
-          // Update total users live
-          this.stats.update(s => (s ? { ...s, totalUsers: s.totalUsers + 1 } : s));
-          // Add to live notifications
-          this.liveNotifications.update(ns => [
-            { email: p.email, time: new Date(p.registeredAt) },
-            ...ns.slice(0, 9),
-          ]);
-        });
-      } catch {
-        // SignalR connection failed â€” dashboard still works without it
-      }
-    }
+  ngOnInit(): void {
+    this.dashboardFacade.enterPage();
   }
 
   ngOnDestroy(): void {
-    this.signalR.off('UserRegistered');
+    this.dashboardFacade.leavePage();
   }
 }

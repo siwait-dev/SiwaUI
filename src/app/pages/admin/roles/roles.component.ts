@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -10,21 +10,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
-import { ApiService } from '../../../core/services/api.service';
-import { ApiErrorService } from '../../../core/services/api-error.service';
-
-interface RoleClaimsResponse {
-  claims: RoleClaimDto[];
-}
-
-interface RoleClaimDto {
-  type: string;
-  value: string;
-}
+import { RoleClaimDto } from '../../../core/store/roles/roles.models';
+import { RolesFacade } from '../../../core/store/roles/roles.facade';
 
 @Component({
   selector: 'app-roles',
-  standalone: true,
   providers: [ConfirmationService, MessageService],
   imports: [
     TranslateModule,
@@ -164,8 +154,12 @@ interface RoleClaimDto {
           />
         </div>
 
-        @if (claimsError()) {
-          <p-message severity="error" [text]="claimsError()! | translate" styleClass="w-full" />
+        @if (visibleClaimsError()) {
+          <p-message
+            severity="error"
+            [text]="visibleClaimsError()! | translate"
+            styleClass="w-full"
+          />
         }
 
         <p-table [value]="claims()" [loading]="claimsLoading()">
@@ -212,22 +206,25 @@ interface RoleClaimDto {
   `,
 })
 export class RolesComponent implements OnInit {
-  private readonly api = inject(ApiService);
-  private readonly apiError = inject(ApiErrorService);
+  private readonly rolesFacade = inject(RolesFacade);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly translate = inject(TranslateService);
 
-  protected readonly roles = signal<string[]>([]);
-  protected readonly selectedRole = signal<string | null>(null);
-  protected readonly claims = signal<RoleClaimDto[]>([]);
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
-  protected readonly claimsLoading = signal(false);
-  protected readonly claimSaving = signal(false);
-  protected readonly createError = signal<string | null>(null);
-  protected readonly claimsError = signal<string | null>(null);
-  protected readonly deletingClaimKey = signal<string | null>(null);
+  protected readonly roles = this.rolesFacade.roles;
+  protected readonly selectedRole = this.rolesFacade.selectedRole;
+  protected readonly claims = this.rolesFacade.claims;
+  protected readonly loading = this.rolesFacade.loading;
+  protected readonly saving = this.rolesFacade.saving;
+  protected readonly claimsLoading = this.rolesFacade.claimsLoading;
+  protected readonly claimSaving = this.rolesFacade.claimSaving;
+  protected readonly createError = this.rolesFacade.createError;
+  protected readonly claimsError = this.rolesFacade.claimsError;
+  protected readonly deletingClaimKey = this.rolesFacade.deletingClaimKey;
+  protected readonly localClaimsError = signal<string | null>(null);
+  protected readonly visibleClaimsError = computed(
+    () => this.localClaimsError() ?? this.claimsError(),
+  );
 
   protected createDialogVisible = false;
   protected claimsDialogVisible = false;
@@ -235,65 +232,73 @@ export class RolesComponent implements OnInit {
   protected newClaimType = '';
   protected newClaimValue = '';
 
-  ngOnInit(): void {
-    this.loadRoles();
+  constructor() {
+    effect(() => {
+      const feedback = this.rolesFacade.feedback();
+      if (!feedback) return;
+
+      const severity = feedback.kind === 'role-delete-failed' ? 'error' : 'success';
+      const summaryKey =
+        feedback.kind === 'role-created'
+          ? 'ADMIN.ROLES.MESSAGES.CREATED'
+          : feedback.kind === 'role-deleted'
+            ? 'ADMIN.ROLES.MESSAGES.DELETED'
+            : feedback.kind === 'claim-added'
+              ? 'ADMIN.ROLES.MESSAGES.CLAIM_ADDED'
+              : feedback.kind === 'claim-removed'
+                ? 'ADMIN.ROLES.MESSAGES.CLAIM_REMOVED'
+                : (feedback.messageKey ?? 'ADMIN.ROLES.ERRORS.DELETE_FAILED');
+
+      if (feedback.kind === 'role-created') {
+        this.createDialogVisible = false;
+        this.newRoleName = '';
+      }
+
+      if (feedback.kind === 'claim-added') {
+        this.newClaimType = '';
+        this.newClaimValue = '';
+      }
+
+      this.messageService.add({
+        severity,
+        summary: this.translate.instant(summaryKey),
+      });
+
+      this.rolesFacade.consumeFeedback();
+    });
   }
 
-  private loadRoles(): void {
-    this.loading.set(true);
-    this.api.get<{ roles: string[] }>('roles').subscribe({
-      next: res => {
-        this.roles.set(res.roles);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+  ngOnInit(): void {
+    this.rolesFacade.enterPage();
   }
 
   protected openCreateDialog(): void {
     this.newRoleName = '';
-    this.createError.set(null);
+    this.rolesFacade.clearCreateError();
     this.createDialogVisible = true;
   }
 
   protected createRole(): void {
-    if (!this.newRoleName.trim()) return;
-    this.saving.set(true);
-    this.createError.set(null);
+    const roleName = this.newRoleName.trim();
+    if (!roleName) return;
 
-    this.api.post<unknown>('roles', { name: this.newRoleName.trim() }).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.createDialogVisible = false;
-        this.messageService.add({
-          severity: 'success',
-          summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CREATED'),
-        });
-        this.loadRoles();
-      },
-      error: error => {
-        this.saving.set(false);
-        this.createError.set(
-          this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CREATE_FAILED'),
-        );
-      },
-    });
+    this.rolesFacade.createRole(roleName);
   }
 
   protected confirmDelete(role: string): void {
     this.confirmationService.confirm({
       message: this.translate.instant('ADMIN.ROLES.CONFIRM_DELETE', { role }),
-      accept: () => this.deleteRole(role),
+      accept: () => this.rolesFacade.deleteRole(role),
     });
   }
 
   protected openClaimsDialog(role: string): void {
-    this.selectedRole.set(role);
     this.claimsDialogVisible = true;
     this.newClaimType = '';
     this.newClaimValue = '';
-    this.claimsError.set(null);
-    this.loadClaims(role);
+    this.localClaimsError.set(null);
+    this.rolesFacade.clearClaimsError();
+    this.rolesFacade.openClaimsDialog(role);
   }
 
   protected addClaim(): void {
@@ -302,90 +307,20 @@ export class RolesComponent implements OnInit {
     const value = this.newClaimValue.trim();
 
     if (!role || !type || !value) {
-      this.claimsError.set('ADMIN.ROLES.ERRORS.CLAIM_REQUIRED');
+      this.localClaimsError.set('ADMIN.ROLES.ERRORS.CLAIM_REQUIRED');
       return;
     }
 
-    this.claimSaving.set(true);
-    this.claimsError.set(null);
-
-    this.api
-      .post<unknown>(`roles/${encodeURIComponent(role)}/claims`, {
-        roleName: role,
-        type,
-        value,
-      })
-      .subscribe({
-        next: () => {
-          this.claimSaving.set(false);
-          this.newClaimType = '';
-          this.newClaimValue = '';
-          this.messageService.add({
-            severity: 'success',
-            summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CLAIM_ADDED'),
-          });
-          this.loadClaims(role);
-        },
-        error: error => {
-          this.claimSaving.set(false);
-          this.claimsError.set(
-            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIM_ADD_FAILED'),
-          );
-        },
-      });
+    this.localClaimsError.set(null);
+    this.rolesFacade.addClaim(role, type, value);
   }
 
   protected removeClaim(claim: RoleClaimDto): void {
     const role = this.selectedRole();
     if (!role) return;
 
-    this.deletingClaimKey.set(this.claimKey(claim));
-    this.claimsError.set(null);
-
-    this.api
-      .delete<unknown>(`roles/${encodeURIComponent(role)}/claims`, {
-        roleName: role,
-        type: claim.type,
-        value: claim.value,
-      })
-      .subscribe({
-        next: () => {
-          this.deletingClaimKey.set(null);
-          this.messageService.add({
-            severity: 'success',
-            summary: this.translate.instant('ADMIN.ROLES.MESSAGES.CLAIM_REMOVED'),
-          });
-          this.claims.set(
-            this.claims().filter(existing => this.claimKey(existing) !== this.claimKey(claim)),
-          );
-        },
-        error: error => {
-          this.deletingClaimKey.set(null);
-          this.claimsError.set(
-            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIM_REMOVE_FAILED'),
-          );
-        },
-      });
-  }
-
-  private deleteRole(role: string): void {
-    this.api.delete<unknown>(`roles/${role}`).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: this.translate.instant('ADMIN.ROLES.MESSAGES.DELETED'),
-        });
-        this.loadRoles();
-      },
-      error: error => {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.translate.instant(
-            this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.DELETE_FAILED'),
-          ),
-        });
-      },
-    });
+    this.localClaimsError.set(null);
+    this.rolesFacade.removeClaim(role, claim);
   }
 
   protected isDeletingClaim(claim: RoleClaimDto): boolean {
@@ -393,32 +328,11 @@ export class RolesComponent implements OnInit {
   }
 
   protected resetClaimsDialog(): void {
-    this.selectedRole.set(null);
-    this.claims.set([]);
-    this.claimsError.set(null);
-    this.claimsLoading.set(false);
-    this.claimSaving.set(false);
-    this.deletingClaimKey.set(null);
+    this.claimsDialogVisible = false;
+    this.rolesFacade.closeClaimsDialog();
+    this.localClaimsError.set(null);
     this.newClaimType = '';
     this.newClaimValue = '';
-  }
-
-  private loadClaims(role: string): void {
-    this.claimsLoading.set(true);
-    this.claimsError.set(null);
-
-    this.api.get<RoleClaimsResponse>(`roles/${encodeURIComponent(role)}/claims`).subscribe({
-      next: res => {
-        this.claims.set(res.claims ?? []);
-        this.claimsLoading.set(false);
-      },
-      error: error => {
-        this.claimsLoading.set(false);
-        this.claimsError.set(
-          this.apiError.getMessageKey(error, 'ADMIN.ROLES.ERRORS.CLAIMS_LOAD_FAILED'),
-        );
-      },
-    });
   }
 
   private claimKey(claim: RoleClaimDto): string {

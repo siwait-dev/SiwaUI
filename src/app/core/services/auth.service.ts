@@ -1,27 +1,30 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { inject, Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+import { UserClaims } from '../state/auth/auth-session';
+import { AuthFacade } from '../store/auth/auth.facade';
 import { ApiService } from './api.service';
-
-// ── Request / Response types ──────────────────────────────────────────────────
 
 export interface LoginRequest {
   email: string;
   password: string;
 }
+
 export interface RegisterRequest {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
 }
+
 export interface ActivateRequest {
   email: string;
   token: string;
 }
+
 export interface ForgotPasswordRequest {
   email: string;
 }
+
 export interface ResetPasswordRequest {
   email: string;
   token: string;
@@ -34,81 +37,21 @@ export interface AuthResponse {
   mustChangePassword?: boolean;
 }
 
-export interface UserClaims {
-  sub: string;
-  email: string;
-  name: string;
-  roles: string[];
-  exp: number;
-}
-
-// ── JWT decoder (no external library) ────────────────────────────────────────
-
-function decodeJwt(token: string): UserClaims | null {
-  try {
-    const part = token.split('.')[1];
-    const padded = part + '='.repeat((4 - (part.length % 4)) % 4);
-    const json = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const c: any = JSON.parse(json);
-
-    const roleRaw = c['role'] ?? c['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-
-    return {
-      sub: String(c['sub'] ?? ''),
-      email: String(c['email'] ?? ''),
-      name: String(
-        c['name'] ?? c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? '',
-      ),
-      roles: Array.isArray(roleRaw) ? (roleRaw as string[]) : roleRaw ? [String(roleRaw)] : [],
-      exp: Number(c['exp'] ?? 0),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function isTokenExpired(token: string): boolean {
-  const claims = decodeJwt(token);
-  if (!claims) return true;
-  // exp is in seconds; add 5s leeway for clock skew
-  return Date.now() / 1000 > claims.exp - 5;
-}
-
-// ── Service ───────────────────────────────────────────────────────────────────
-
-const TOKEN_KEY = 'siwa-token';
-const REFRESH_TOKEN_KEY = 'siwa-refresh-token';
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly api = inject(ApiService);
-  private readonly router = inject(Router);
+  private readonly authFacade = inject(AuthFacade);
 
-  private readonly _token = signal<string | null>(localStorage.getItem(TOKEN_KEY));
-
-  /** `true` wanneer er een niet-verlopen access-token in localStorage staat. */
-  readonly isLoggedIn = computed(() => {
-    const t = this._token();
-    return !!t && !isTokenExpired(t);
-  });
-
-  /** Decoded JWT-claims van de ingelogde gebruiker, of `null`. */
-  readonly currentUser = computed<UserClaims | null>(() => {
-    const t = this._token();
-    if (!t || isTokenExpired(t)) return null;
-    return decodeJwt(t);
-  });
+  readonly isLoggedIn = this.authFacade.isLoggedIn;
+  readonly currentUser = this.authFacade.currentUser as () => UserClaims | null;
 
   getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return this.authFacade.refreshToken();
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return this.authFacade.accessToken();
   }
-
-  // ── Auth-acties ─────────────────────────────────────────────────────────────
 
   login(req: LoginRequest): Observable<AuthResponse> {
     return this.api
@@ -139,22 +82,16 @@ export class AuthService {
   }
 
   logout(): void {
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    // Fire-and-forget revoke — niet wachten op resultaat
+    const refreshToken = this.getRefreshToken();
+
     if (refreshToken) {
       this.api.post<void>('auth/logout', { refreshToken }).subscribe({ error: () => {} });
     }
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    this._token.set(null);
-    void this.router.navigate(['/login']);
+
+    this.authFacade.clearSession(true);
   }
 
-  // ── Token opslag ─────────────────────────────────────────────────────────────
-
   storeTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    this._token.set(accessToken);
+    this.authFacade.setSession(accessToken, refreshToken);
   }
 }

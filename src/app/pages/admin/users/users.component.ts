@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
@@ -10,36 +10,12 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ApiService } from '../../../core/services/api.service';
-import { ApiErrorService } from '../../../core/services/api-error.service';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
-
-interface UserDto {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  isActive: boolean;
-  emailConfirmed: boolean;
-  roles: string[];
-  createdAt: string;
-  lastLoginAt?: string;
-}
-
-interface UserListResponse {
-  items: UserDto[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
-
-interface UserRolesResponse {
-  roles: string[];
-}
+import { UserDto } from '../../../core/store/users/users.models';
+import { UsersFacade } from '../../../core/store/users/users.facade';
 
 @Component({
   selector: 'app-users',
-  standalone: true,
   imports: [
     TranslateModule,
     CardModule,
@@ -240,6 +216,7 @@ interface UserRolesResponse {
       [header]="'ADMIN.USERS.ROLES_DIALOG_TITLE' | translate"
       [modal]="true"
       [style]="{ width: '400px' }"
+      (onHide)="closeRolesDialog()"
     >
       @if (rolesDialogUser()) {
         <div class="flex flex-col gap-3">
@@ -277,16 +254,15 @@ interface UserRolesResponse {
   `,
 })
 export class UsersComponent implements OnInit {
-  private readonly api = inject(ApiService);
-  private readonly apiError = inject(ApiErrorService);
+  private readonly usersFacade = inject(UsersFacade);
 
-  protected readonly users = signal<UserDto[]>([]);
-  protected readonly totalCount = signal(0);
-  protected readonly loading = signal(true);
-  protected readonly allRoles = signal<string[]>([]);
-  protected readonly rolesDialogUser = signal<UserDto | null>(null);
-  protected readonly rolesError = signal<string | null>(null);
-  protected readonly rolesLoading = signal(false);
+  protected readonly users = this.usersFacade.users;
+  protected readonly totalCount = this.usersFacade.totalCount;
+  protected readonly loading = this.usersFacade.loading;
+  protected readonly allRoles = this.usersFacade.allRoles;
+  protected readonly rolesDialogUser = this.usersFacade.rolesDialogUser;
+  protected readonly rolesError = this.usersFacade.rolesError;
+  protected readonly rolesLoading = this.usersFacade.rolesLoading;
   protected readonly detailsUser = signal<UserDto | null>(null);
 
   protected rolesDialogVisible = false;
@@ -304,70 +280,29 @@ export class UsersComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadRoles();
-    this.fetchUsers(1, this.pageSize, this.searchValue);
+    this.usersFacade.enterPage();
   }
 
   protected loadUsers(event: TableLazyLoadEvent): void {
-    const page = event.first !== undefined ? Math.floor(event.first / this.pageSize) + 1 : 1;
+    const rows = event.rows ?? this.pageSize;
+    const page = event.first !== undefined ? Math.floor(event.first / rows) + 1 : 1;
     this.currentPage = page;
-    this.fetchUsers(page, this.pageSize, this.searchValue);
+    this.pageSize = rows;
+    this.usersFacade.setPage(page, rows);
   }
 
   protected onSearch(): void {
     clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => this.fetchUsers(1, this.pageSize, this.searchValue), 300);
+    this.searchTimeout = setTimeout(() => this.usersFacade.setSearch(this.searchValue), 300);
   }
 
   protected onStatusFilterChange(): void {
-    this.fetchUsers(1, this.pageSize, this.searchValue);
-  }
-
-  private fetchUsers(page: number, pageSize: number, search: string): void {
-    this.loading.set(true);
-    const params: Record<string, string | number | boolean> = { page, pageSize };
-    if (search) params['search'] = search;
-    if (this.selectedStatus !== null) params['isActive'] = this.selectedStatus;
-
-    this.api.get<UserListResponse>('users', params).subscribe({
-      next: res => {
-        this.users.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
-  }
-
-  private loadRoles(): void {
-    this.api.get<{ roles: string[] }>('roles').subscribe({
-      next: res => this.allRoles.set(res.roles),
-    });
+    this.usersFacade.setStatusFilter(this.selectedStatus);
   }
 
   protected openRolesDialog(user: UserDto): void {
-    this.rolesDialogUser.set({ ...user, roles: [] });
-    this.rolesError.set(null);
-    this.rolesLoading.set(true);
+    this.usersFacade.openRolesDialog(user);
     this.rolesDialogVisible = true;
-
-    this.api.get<UserRolesResponse>(`users/${user.userId}/roles`).subscribe({
-      next: res => {
-        const dialogUser = this.rolesDialogUser();
-        if (!dialogUser) return;
-
-        const updatedUser = { ...dialogUser, roles: [...(res.roles ?? [])] };
-        this.rolesDialogUser.set(updatedUser);
-        this.syncUserInList(updatedUser);
-        this.rolesLoading.set(false);
-      },
-      error: error => {
-        this.rolesLoading.set(false);
-        this.rolesError.set(
-          this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLES_LOAD_FAILED'),
-        );
-      },
-    });
   }
 
   protected openDetailsDialog(user: UserDto): void {
@@ -375,50 +310,20 @@ export class UsersComponent implements OnInit {
     this.detailsDialogVisible = true;
   }
 
+  protected closeRolesDialog(): void {
+    this.rolesDialogVisible = false;
+    this.usersFacade.closeRolesDialog();
+  }
+
   protected hasRole(user: UserDto, role: string): boolean {
     return user.roles.includes(role);
   }
 
   protected toggleRole(user: UserDto, role: string, checked: boolean): void {
-    this.rolesError.set(null);
     if (checked) {
-      this.api
-        .post<unknown>(`users/${user.userId}/roles`, { userId: user.userId, roleName: role })
-        .subscribe({
-          next: () => {
-            user.roles = [...user.roles, role];
-            this.syncUserInList(user);
-          },
-          error: error =>
-            this.rolesError.set(
-              this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLE_SAVE_FAILED'),
-            ),
-        });
+      this.usersFacade.addUserRole(user.userId, role);
     } else {
-      this.api.delete<unknown>(`users/${user.userId}/roles/${role}`).subscribe({
-        next: () => {
-          user.roles = user.roles.filter(r => r !== role);
-          this.syncUserInList(user);
-        },
-        error: error =>
-          this.rolesError.set(
-            this.apiError.getMessageKey(error, 'ADMIN.USERS.ERRORS.ROLE_REMOVE_FAILED'),
-          ),
-      });
-    }
-  }
-
-  private syncUserInList(user: UserDto): void {
-    const list = this.users();
-    const idx = list.findIndex(u => u.userId === user.userId);
-    if (idx < 0) return;
-
-    const updated = [...list];
-    updated[idx] = { ...updated[idx], ...user, roles: [...user.roles] };
-    this.users.set(updated);
-
-    if (this.detailsUser()?.userId === user.userId) {
-      this.detailsUser.set(updated[idx]);
+      this.usersFacade.removeUserRole(user.userId, role);
     }
   }
 }

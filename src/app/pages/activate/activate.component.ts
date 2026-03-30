@@ -1,11 +1,11 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, inject, OnInit } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { AuthService } from '../../core/services/auth.service';
+import { ActivateFacade } from '../../core/store/activate/activate.facade';
 
 @Component({
   selector: 'app-activate',
@@ -20,13 +20,11 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <p-card [header]="'USER.ACTIVATE.TITLE' | translate">
       <div class="flex flex-col items-center gap-6 py-4">
-        <!-- Bezig met activeren -->
         @if (status() === 'loading') {
           <p-progressSpinner strokeWidth="4" styleClass="w-12 h-12" />
           <p class="text-surface-500">{{ 'USER.ACTIVATE.ACTIVATING' | translate }}</p>
         }
 
-        <!-- Succesvol geactiveerd -->
         @if (status() === 'success') {
           <i class="pi pi-check-circle text-green-500 text-6xl"></i>
           <p class="text-center text-surface-600">{{ 'USER.ACTIVATE.SUCCESS' | translate }}</p>
@@ -37,7 +35,6 @@ import { AuthService } from '../../core/services/auth.service';
           />
         }
 
-        <!-- Fout: ongeldige of verlopen link -->
         @if (status() === 'error') {
           <i class="pi pi-times-circle text-red-500 text-6xl"></i>
           <p-message
@@ -52,7 +49,6 @@ import { AuthService } from '../../core/services/auth.service';
           />
         }
 
-        <!-- Geen params in URL: toon instructie -->
         @if (status() === 'no-params') {
           <i class="pi pi-envelope text-primary text-6xl"></i>
           <p class="text-center text-surface-500">{{ 'USER.ACTIVATE.CHECK_EMAIL' | translate }}</p>
@@ -65,28 +61,20 @@ import { AuthService } from '../../core/services/auth.service';
   `,
 })
 export class ActivateComponent implements OnInit {
-  private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly activateFacade = inject(ActivateFacade);
 
-  protected readonly status = signal<'loading' | 'success' | 'error' | 'no-params'>('loading');
+  protected readonly status = this.activateFacade.status;
 
   ngOnInit(): void {
     const email = this.route.snapshot.queryParamMap.get('email');
     const token = this.route.snapshot.queryParamMap.get('token');
 
     if (!email || !token) {
-      this.status.set('no-params');
+      this.activateFacade.setNoParams();
       return;
     }
 
-    this.authService.activate({ email, token }).subscribe({
-      next: () => {
-        this.status.set('success');
-        // Na 3 seconden automatisch naar login
-        setTimeout(() => void this.router.navigate(['/login']), 3000);
-      },
-      error: () => this.status.set('error'),
-    });
+    this.activateFacade.submit(email, token);
   }
 }

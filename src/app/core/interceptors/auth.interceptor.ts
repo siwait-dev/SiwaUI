@@ -2,9 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-
-const TOKEN_KEY = 'siwa-token';
-const REFRESH_TOKEN_KEY = 'siwa-refresh-token';
+import { AuthFacade } from '../store/auth/auth.facade';
 
 /**
  * authInterceptor
@@ -17,9 +15,10 @@ const REFRESH_TOKEN_KEY = 'siwa-refresh-token';
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
+  const authFacade = inject(AuthFacade);
 
   // Voeg access-token toe als die beschikbaar is
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = authFacade.accessToken();
   const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
   return next(authReq).pipe(
@@ -31,7 +30,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         !req.url.includes('/auth/refresh') &&
         !req.url.includes('/auth/login')
       ) {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        const refreshToken = authFacade.refreshToken();
         if (refreshToken) {
           return auth.refreshAccessToken(refreshToken).pipe(
             switchMap(res => {

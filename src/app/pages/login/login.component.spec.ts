@@ -1,31 +1,33 @@
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { LoginComponent } from './login.component';
-import { AuthService } from '../../core/services/auth.service';
+import { LoginFacade } from '../../core/store/login/login.facade';
 
 describe('LoginComponent', () => {
-  const authService = {
-    login: vi.fn(),
+  const loginFacade = {
+    loading: vi.fn(),
+    feedback: vi.fn(),
+    submit: vi.fn(),
+    consumeFeedback: vi.fn(),
   };
 
   beforeEach(async () => {
-    authService.login.mockReset();
+    loginFacade.loading.mockReset();
+    loginFacade.feedback.mockReset();
+    loginFacade.submit.mockReset();
+    loginFacade.consumeFeedback.mockReset();
+
+    loginFacade.loading.mockReturnValue(false);
+    loginFacade.feedback.mockReturnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, TranslateModule.forRoot()],
       providers: [
         provideRouter([]),
         {
-          provide: AuthService,
-          useValue: authService,
-        },
-        {
-          provide: Router,
-          useValue: {
-            navigate: vi.fn().mockResolvedValue(true),
-          },
+          provide: LoginFacade,
+          useValue: loginFacade,
         },
         {
           provide: ActivatedRoute,
@@ -45,56 +47,59 @@ describe('LoginComponent', () => {
 
     component.submit();
 
-    expect(authService.login).not.toHaveBeenCalled();
+    expect(loginFacade.submit).not.toHaveBeenCalled();
   });
 
-  it('navigates to dashboard after a successful login', () => {
-    authService.login.mockReturnValue(
-      of({ accessToken: 'token', refreshToken: 'refresh', mustChangePassword: false }),
-    );
-
+  it('submits login through the facade', () => {
     const fixture = TestBed.createComponent(LoginComponent);
     const component = fixture.componentInstance;
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
 
     component.form.setValue({ email: 'user@example.com', password: 'Password1!' });
     component.submit();
 
-    expect(authService.login).toHaveBeenCalledWith({
-      email: 'user@example.com',
-      password: 'Password1!',
+    expect(loginFacade.submit).toHaveBeenCalledWith('user@example.com', 'Password1!');
+  });
+
+  it('shows the feedback error key', () => {
+    loginFacade.feedback.mockReturnValue({
+      kind: 'error',
+      errorKey: 'VALIDATION.INVALID_CREDENTIALS',
     });
-    expect(navigateSpy).toHaveBeenCalledWith(['/app/dashboard']);
-  });
-
-  it('navigates to change-password when the backend requires it', () => {
-    authService.login.mockReturnValue(
-      of({ accessToken: 'token', refreshToken: 'refresh', mustChangePassword: true }),
-    );
 
     const fixture = TestBed.createComponent(LoginComponent);
     const component = fixture.componentInstance;
-    const router = TestBed.inject(Router);
-    const navigateSpy = vi.spyOn(router, 'navigate');
-
-    component.form.setValue({ email: 'user@example.com', password: 'Password1!' });
-    component.submit();
-
-    expect(navigateSpy).toHaveBeenCalledWith(['/app/change-password'], {
-      queryParams: { reason: 'expired' },
-    });
-  });
-
-  it('shows the invalid credentials key on a 401 error', () => {
-    authService.login.mockReturnValue(throwError(() => ({ status: 401 })));
-
-    const fixture = TestBed.createComponent(LoginComponent);
-    const component = fixture.componentInstance;
-
-    component.form.setValue({ email: 'user@example.com', password: 'Password1!' });
-    component.submit();
+    fixture.detectChanges();
 
     expect(component['errorKey']()).toBe('VALIDATION.INVALID_CREDENTIALS');
+    expect(loginFacade.consumeFeedback).toHaveBeenCalled();
+  });
+
+  it('shows reset success when the query parameter is present', () => {
+    TestBed.resetTestingModule();
+
+    return TestBed.configureTestingModule({
+      imports: [LoginComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        {
+          provide: LoginFacade,
+          useValue: loginFacade,
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: convertToParamMap({ reset: 'success' }),
+            },
+          },
+        },
+      ],
+    })
+      .compileComponents()
+      .then(() => {
+        const fixture = TestBed.createComponent(LoginComponent);
+        const component = fixture.componentInstance;
+        expect(component['resetSuccess']()).toBe(true);
+      });
   });
 });

@@ -72,7 +72,14 @@ export async function mockLoginUnauthorized(page: Page): Promise<void> {
     route.fulfill({
       status: 401,
       contentType: 'application/json',
-      body: JSON.stringify({ message: 'Invalid credentials' }),
+      body: JSON.stringify({
+        error: {
+          hasError: true,
+          errors: [
+            { code: 'VALIDATION.INVALID_CREDENTIALS', message: '', statusCode: 401, type: 'Error' },
+          ],
+        },
+      }),
     }),
   );
 }
@@ -88,7 +95,19 @@ export async function mockRegisterConflict(page: Page): Promise<void> {
     route.fulfill({
       status: 409,
       contentType: 'application/json',
-      body: JSON.stringify({ message: 'Email already in use' }),
+      body: JSON.stringify({
+        error: {
+          hasError: true,
+          errors: [
+            {
+              code: 'VALIDATION.ACCOUNT_EXISTS',
+              message: '',
+              statusCode: 409,
+              type: 'Error',
+            },
+          ],
+        },
+      }),
     }),
   );
 }

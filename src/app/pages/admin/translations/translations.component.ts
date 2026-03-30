@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -11,23 +11,11 @@ import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
-import { forkJoin } from 'rxjs';
-import { ApiService } from '../../../core/services/api.service';
-import { ApiErrorService } from '../../../core/services/api-error.service';
-
-interface TranslationRow {
-  key: string;
-  nl: string;
-  en: string;
-}
-
-interface FlatTranslationsResponse {
-  translations: Record<string, string>;
-}
+import { TranslationRow } from '../../../core/store/translations/translations.models';
+import { TranslationsFacade } from '../../../core/store/translations/translations.facade';
 
 @Component({
   selector: 'app-translations',
-  standalone: true,
   providers: [ConfirmationService, MessageService],
   imports: [
     TranslateModule,
@@ -156,16 +144,17 @@ interface FlatTranslationsResponse {
   `,
 })
 export class TranslationsComponent implements OnInit {
-  private readonly api = inject(ApiService);
-  private readonly apiError = inject(ApiErrorService);
+  private readonly translationsFacade = inject(TranslationsFacade);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly translate = inject(TranslateService);
 
-  protected readonly rows = signal<TranslationRow[]>([]);
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
-  protected readonly editError = signal<string | null>(null);
+  protected readonly rows = this.translationsFacade.rows;
+  protected readonly loading = this.translationsFacade.loading;
+  protected readonly saving = this.translationsFacade.saving;
+  protected readonly backendEditError = this.translationsFacade.editError;
+  protected readonly localEditError = signal<string | null>(null);
+  protected readonly editError = computed(() => this.localEditError() ?? this.backendEditError());
 
   protected searchValue = '';
   protected editDialogVisible = false;
@@ -174,6 +163,32 @@ export class TranslationsComponent implements OnInit {
   protected editNl = '';
   protected editEn = '';
   protected isEditing = false;
+
+  constructor() {
+    effect(() => {
+      const feedback = this.translationsFacade.feedback();
+      if (!feedback) return;
+
+      const severity = feedback.kind === 'delete-failed' ? 'error' : 'success';
+      const summaryKey =
+        feedback.kind === 'saved'
+          ? 'ADMIN.TRANSLATIONS.MESSAGES.SAVED'
+          : feedback.kind === 'deleted'
+            ? 'ADMIN.TRANSLATIONS.MESSAGES.DELETED'
+            : (feedback.messageKey ?? 'ADMIN.TRANSLATIONS.ERRORS.DELETE_FAILED');
+
+      if (feedback.kind === 'saved') {
+        this.editDialogVisible = false;
+      }
+
+      this.messageService.add({
+        severity,
+        summary: this.translate.instant(summaryKey),
+      });
+
+      this.translationsFacade.consumeFeedback();
+    });
+  }
 
   protected filteredRows(): TranslationRow[] {
     if (!this.searchValue) return this.rows();
@@ -187,37 +202,12 @@ export class TranslationsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadTranslations();
-  }
-
-  private loadTranslations(): void {
-    this.loading.set(true);
-    let nlData: Record<string, string> = {};
-    let enData: Record<string, string> = {};
-
-    this.api.get<FlatTranslationsResponse>('translations/nl/flat').subscribe({
-      next: res => {
-        nlData = res.translations ?? (res as unknown as Record<string, string>);
-        this.api.get<FlatTranslationsResponse>('translations/en/flat').subscribe({
-          next: res2 => {
-            enData = res2.translations ?? (res2 as unknown as Record<string, string>);
-            const keys = new Set([...Object.keys(nlData), ...Object.keys(enData)]);
-            this.rows.set(
-              Array.from(keys)
-                .sort()
-                .map(k => ({ key: k, nl: nlData[k] ?? '', en: enData[k] ?? '' })),
-            );
-            this.loading.set(false);
-          },
-          error: () => this.loading.set(false),
-        });
-      },
-      error: () => this.loading.set(false),
-    });
+    this.translationsFacade.enterPage();
   }
 
   protected openEditDialog(row: TranslationRow | null): void {
-    this.editError.set(null);
+    this.translationsFacade.clearEditError();
+    this.localEditError.set(null);
     if (row) {
       this.editKey = row.key;
       this.editModule = '';
@@ -239,48 +229,21 @@ export class TranslationsComponent implements OnInit {
     const module = this.editModule.trim();
 
     if (!key) {
-      this.editError.set('ADMIN.TRANSLATIONS.ERRORS.KEY_REQUIRED');
+      this.localEditError.set('ADMIN.TRANSLATIONS.ERRORS.KEY_REQUIRED');
       return;
     }
 
     if (!this.editNl.trim() && !this.editEn.trim()) {
-      this.editError.set('ADMIN.TRANSLATIONS.ERRORS.VALUE_REQUIRED');
+      this.localEditError.set('ADMIN.TRANSLATIONS.ERRORS.VALUE_REQUIRED');
       return;
     }
 
-    this.saving.set(true);
-    this.editError.set(null);
-
-    const saveNl$ = this.api.post<unknown>('translations', {
+    this.localEditError.set(null);
+    this.translationsFacade.saveTranslation({
       key,
-      languageCode: 'nl',
-      value: this.editNl,
-      module: module || null,
-    });
-
-    const saveEn$ = this.api.post<unknown>('translations', {
-      key,
-      languageCode: 'en',
-      value: this.editEn,
-      module: module || null,
-    });
-
-    forkJoin([saveNl$, saveEn$]).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.editDialogVisible = false;
-        this.messageService.add({
-          severity: 'success',
-          summary: this.translate.instant('ADMIN.TRANSLATIONS.MESSAGES.SAVED'),
-        });
-        this.loadTranslations();
-      },
-      error: error => {
-        this.saving.set(false);
-        this.editError.set(
-          this.apiError.getMessageKey(error, 'ADMIN.TRANSLATIONS.ERRORS.SAVE_FAILED'),
-        );
-      },
+      module,
+      nl: this.editNl,
+      en: this.editEn,
     });
   }
 
@@ -291,26 +254,7 @@ export class TranslationsComponent implements OnInit {
     });
   }
 
-  private deleteTranslation(row: TranslationRow): void {
-    forkJoin([
-      this.api.delete<unknown>(`translations/nl/${encodeURIComponent(row.key)}`),
-      this.api.delete<unknown>(`translations/en/${encodeURIComponent(row.key)}`),
-    ]).subscribe({
-      next: () => {
-        this.rows.set(this.rows().filter(existing => existing.key !== row.key));
-        this.messageService.add({
-          severity: 'success',
-          summary: this.translate.instant('ADMIN.TRANSLATIONS.MESSAGES.DELETED'),
-        });
-      },
-      error: error => {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.translate.instant(
-            this.apiError.getMessageKey(error, 'ADMIN.TRANSLATIONS.ERRORS.DELETE_FAILED'),
-          ),
-        });
-      },
-    });
+  protected deleteTranslation(row: TranslationRow): void {
+    this.translationsFacade.deleteTranslation(row);
   }
 }

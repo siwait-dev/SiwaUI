@@ -1,12 +1,9 @@
-﻿import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import {
-  ThemeService,
-  Theme,
-  Layout,
-} from '../../../../../projects/siwa-ui/src/lib/services/theme.service';
+import { CardModule } from 'primeng/card';
+import { Layout, Theme } from '../../../../../projects/siwa-ui/src/lib/services/theme.service';
+import { ThemeSettingsFacade } from '../../../core/store/theme-settings/theme-settings.facade';
 
 @Component({
   selector: 'app-theme-settings',
@@ -15,38 +12,36 @@ import {
     <div class="flex flex-col gap-6 max-w-lg">
       <h1 class="text-2xl font-bold">{{ 'ADMIN.THEME_SETTINGS.TITLE' | translate }}</h1>
 
-      <!-- Kleurthema -->
       <p-card [header]="'ADMIN.THEME_SETTINGS.COLOR_THEME' | translate">
         <div class="flex gap-2">
           @for (opt of themeOptions; track opt.value) {
             <p-button
               [label]="opt.labelKey | translate"
               [icon]="opt.icon"
-              [severity]="themeService.theme() === opt.value ? 'primary' : 'secondary'"
-              [outlined]="themeService.theme() !== opt.value"
+              [severity]="selectedTheme() === opt.value ? 'primary' : 'secondary'"
+              [outlined]="selectedTheme() !== opt.value"
               (onClick)="setTheme(opt.value)"
-              [attr.aria-pressed]="themeService.theme() === opt.value"
+              [attr.aria-pressed]="selectedTheme() === opt.value"
             />
           }
         </div>
       </p-card>
 
-      <!-- Weergavestijl -->
       <p-card [header]="'ADMIN.THEME_SETTINGS.LAYOUT_STYLE' | translate">
         <div class="flex gap-2">
           @for (opt of layoutOptions; track opt.value) {
             <p-button
               [label]="opt.labelKey | translate"
               [icon]="opt.icon"
-              [severity]="themeService.layout() === opt.value ? 'primary' : 'secondary'"
-              [outlined]="themeService.layout() !== opt.value"
+              [severity]="selectedLayout() === opt.value ? 'primary' : 'secondary'"
+              [outlined]="selectedLayout() !== opt.value"
               (onClick)="setLayout(opt.value)"
-              [attr.aria-pressed]="themeService.layout() === opt.value"
+              [attr.aria-pressed]="selectedLayout() === opt.value"
             />
           }
         </div>
         <p class="text-surface-500 text-sm mt-3">
-          @if (themeService.layout() === 'topbar') {
+          @if (selectedLayout() === 'topbar') {
             {{ 'ADMIN.THEME_SETTINGS.TOPBAR_HINT' | translate }}
           } @else {
             {{ 'ADMIN.THEME_SETTINGS.SIDEBAR_HINT' | translate }}
@@ -56,8 +51,12 @@ import {
     </div>
   `,
 })
-export class ThemeSettingsComponent {
-  protected readonly themeService = inject(ThemeService);
+export class ThemeSettingsComponent implements OnInit {
+  private readonly themeSettingsFacade = inject(ThemeSettingsFacade);
+
+  protected readonly selectedTheme = this.themeSettingsFacade.theme;
+  protected readonly selectedLayout = this.themeSettingsFacade.layout;
+  protected readonly loading = this.themeSettingsFacade.loading;
 
   readonly themeOptions: { value: Theme; labelKey: string; icon: string }[] = [
     { value: 'light', labelKey: 'ADMIN.THEME_SETTINGS.LIGHT', icon: 'pi pi-sun' },
@@ -69,11 +68,15 @@ export class ThemeSettingsComponent {
     { value: 'topbar', labelKey: 'ADMIN.THEME_SETTINGS.TOPBAR', icon: 'pi pi-align-justify' },
   ];
 
+  ngOnInit(): void {
+    this.themeSettingsFacade.enterPage();
+  }
+
   setTheme(theme: Theme): void {
-    this.themeService.setTheme(theme);
+    this.themeSettingsFacade.setTheme(theme);
   }
 
   setLayout(layout: Layout): void {
-    this.themeService.setLayout(layout);
+    this.themeSettingsFacade.setLayout(layout);
   }
 }

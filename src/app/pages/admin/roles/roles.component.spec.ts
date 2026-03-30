@@ -1,9 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideEffects } from '@ngrx/effects';
+import { provideState, provideStore } from '@ngrx/store';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { RolesComponent } from './roles.component';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 import { ApiService } from '../../../core/services/api.service';
+import { RolesEffects } from '../../../core/store/roles/roles.effects';
+import { rolesFeature } from '../../../core/store/roles/roles.reducer';
 
 describe('RolesComponent', () => {
   const api = {
@@ -20,7 +25,20 @@ describe('RolesComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [RolesComponent, TranslateModule.forRoot()],
-      providers: [{ provide: ApiService, useValue: api }, ConfirmationService, MessageService],
+      providers: [
+        provideStore(),
+        provideState(rolesFeature),
+        provideEffects(RolesEffects),
+        { provide: ApiService, useValue: api },
+        {
+          provide: ApiErrorService,
+          useValue: {
+            getMessageKey: vi.fn((_: unknown, fallback: string) => fallback),
+          },
+        },
+        ConfirmationService,
+        MessageService,
+      ],
     }).compileComponents();
   });
 
@@ -37,17 +55,17 @@ describe('RolesComponent', () => {
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    component['selectedRole'].set('Admin');
+    component['openClaimsDialog']('Admin');
     component['newClaimType'] = '';
     component['newClaimValue'] = '';
 
     component['addClaim']();
 
-    expect(component['claimsError']()).toBe('ADMIN.ROLES.ERRORS.CLAIM_REQUIRED');
+    expect(component['visibleClaimsError']()).toBe('ADMIN.ROLES.ERRORS.CLAIM_REQUIRED');
     expect(api.post).not.toHaveBeenCalledWith('roles/Admin/claims', expect.anything());
   });
 
-  it('creates a role and reloads the list', () => {
+  it('creates a role through the facade flow', () => {
     api.post.mockReturnValue(of({}));
 
     const fixture = TestBed.createComponent(RolesComponent);
@@ -58,6 +76,6 @@ describe('RolesComponent', () => {
     component['createRole']();
 
     expect(api.post).toHaveBeenCalledWith('roles', { name: 'Manager' });
-    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(component['roles']()).toContain('Manager');
   });
 });

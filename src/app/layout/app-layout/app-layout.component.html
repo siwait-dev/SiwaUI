@@ -1,4 +1,4 @@
-@if (themeService.layout() === 'sidebar') {
+@if (layout() === 'sidebar') {
   <!-- ── Sidebar layout ─────────────────────────────────────────── -->
   <div class="siwa-layout siwa-layout--sidebar" [class.siwa-layout--collapsed]="sidebarCollapsed()">
     <app-sidebar [collapsed]="sidebarCollapsed()" (collapseToggle)="toggleSidebar()" />

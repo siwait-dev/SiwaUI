@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AvatarModule } from 'primeng/avatar';
@@ -6,20 +6,10 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/auth.service';
-
-interface ProfileResponse {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-}
+import { ProfileFacade } from '../../core/store/profile/profile.facade';
 
 @Component({
   selector: 'app-profile',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     TranslateModule,
@@ -106,12 +96,11 @@ interface ProfileResponse {
   `,
 })
 export class ProfileComponent implements OnInit {
-  private readonly api = inject(ApiService);
-  private readonly auth = inject(AuthService);
+  private readonly profileFacade = inject(ProfileFacade);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
+  protected readonly loading = this.profileFacade.loading;
+  protected readonly saving = this.profileFacade.saving;
   protected readonly saveSuccess = signal(false);
   protected readonly saveError = signal(false);
   protected readonly email = signal('');
@@ -128,18 +117,32 @@ export class ProfileComponent implements OnInit {
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
   });
 
-  ngOnInit(): void {
-    this.api.get<ProfileResponse>('auth/me').subscribe({
-      next: profile => {
-        this.form.patchValue({ firstName: profile.firstName, lastName: profile.lastName });
-        this.email.set(profile.email);
-        this.roles.set(profile.roles);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      },
+  constructor() {
+    effect(() => {
+      const profile = this.profileFacade.profile();
+      this.form.patchValue(
+        {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+        },
+        { emitEvent: false },
+      );
+      this.email.set(profile.email);
+      this.roles.set(profile.roles);
     });
+
+    effect(() => {
+      const feedback = this.profileFacade.feedback();
+      if (!feedback) return;
+
+      this.saveSuccess.set(feedback.kind === 'saved');
+      this.saveError.set(feedback.kind === 'save-failed' || feedback.kind === 'load-failed');
+      this.profileFacade.consumeFeedback();
+    });
+  }
+
+  ngOnInit(): void {
+    this.profileFacade.enterPage();
   }
 
   isInvalid(field: string): boolean {
@@ -151,20 +154,11 @@ export class ProfileComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    this.saving.set(true);
     this.saveSuccess.set(false);
     this.saveError.set(false);
 
-    const { firstName, lastName } = this.form.value;
-    this.api.put<void>('auth/me', { firstName, lastName }).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.saveSuccess.set(true);
-      },
-      error: () => {
-        this.saving.set(false);
-        this.saveError.set(true);
-      },
-    });
+    const { firstName, lastName } = this.form.getRawValue();
+    this.profileFacade.updateDraft({ firstName: firstName ?? '', lastName: lastName ?? '' });
+    this.profileFacade.save();
   }
 }

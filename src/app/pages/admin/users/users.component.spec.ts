@@ -1,6 +1,10 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideEffects } from '@ngrx/effects';
+import { provideState, provideStore } from '@ngrx/store';
 import { TranslateModule } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
+import { UsersEffects } from '../../../core/store/users/users.effects';
+import { usersFeature } from '../../../core/store/users/users.reducer';
 import { UsersComponent } from './users.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
@@ -54,6 +58,9 @@ describe('UsersComponent', () => {
     await TestBed.configureTestingModule({
       imports: [UsersComponent, TranslateModule.forRoot()],
       providers: [
+        provideStore(),
+        provideState(usersFeature),
+        provideEffects(UsersEffects),
         { provide: ApiService, useValue: api },
         { provide: ApiErrorService, useValue: apiError },
       ],
@@ -83,19 +90,21 @@ describe('UsersComponent', () => {
     expect(api.get).toHaveBeenCalledWith('users', { page: 1, pageSize: 10, isActive: true });
   });
 
-  it('debounces search and passes the search query to the API', fakeAsync(() => {
+  it('debounces search and passes the search query to the API', () => {
     const fixture = TestBed.createComponent(UsersComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
     api.get.mockClear();
     component['searchValue'] = 'admin';
+    vi.useFakeTimers();
 
     component['onSearch']();
-    tick(300);
+    vi.advanceTimersByTime(300);
 
     expect(api.get).toHaveBeenCalledWith('users', { page: 1, pageSize: 10, search: 'admin' });
-  }));
+    vi.useRealTimers();
+  });
 
   it('loads the latest roles when opening the role dialog', () => {
     const fixture = TestBed.createComponent(UsersComponent);
