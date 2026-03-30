@@ -44,7 +44,7 @@
       @for (lang of languages; track lang.code) {
         <button
           class="siwa-topbar__lang-btn"
-          [class.siwa-topbar__lang-btn--active]="localeService.language() === lang.code"
+          [class.siwa-topbar__lang-btn--active]="language() === lang.code"
           (click)="setLanguage(lang.code)"
           [attr.title]="lang.labelKey | translate"
           [attr.aria-label]="lang.labelKey | translate"

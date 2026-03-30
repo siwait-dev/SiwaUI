@@ -24,7 +24,12 @@ import { SiwaPreset } from './core/theme/siwa-preset';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from '../../projects/siwa-ui/src/lib/interceptors/error.interceptor';
+import { LocaleService } from '../../projects/siwa-ui/src/lib/services/locale.service';
 import { LoggingService } from '../../projects/siwa-ui/src/lib/services/logging.service';
+import { ThemeService } from '../../projects/siwa-ui/src/lib/services/theme.service';
+import { LocaleSettingsEffects } from './core/store/locale-settings/locale-settings.effects';
+import { LocaleSettingsFacade } from './core/store/locale-settings/locale-settings.facade';
+import { localeSettingsFeature } from './core/store/locale-settings/locale-settings.reducer';
 import { AuthFacade } from './core/store/auth/auth.facade';
 import { AuthEffects } from './core/store/auth/auth.effects';
 import { authFeature } from './core/store/auth/auth.reducer';
@@ -45,7 +50,9 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideStore(),
     provideState(authFeature),
+    provideState(localeSettingsFeature),
     provideEffects(AuthEffects),
+    provideEffects(LocaleSettingsEffects),
     ...(isDevMode()
       ? [
           provideStoreDevtools({
@@ -67,6 +74,8 @@ export const appConfig: ApplicationConfig = {
       provide: ENVIRONMENT_INITIALIZER,
       multi: true,
       useValue: () => {
+        inject(ThemeService).init();
+        inject(LocaleSettingsFacade).bootstrap();
         inject(AuthFacade).bootstrapSession();
         inject(LoggingService).configure(`${environment.apiUrl}/logs/client`);
       },
@@ -87,7 +96,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: LOCALE_ID,
       useFactory: () => {
-        const lang = localStorage.getItem('siwa-language') ?? 'nl';
+        const lang = localStorage.getItem('siwa-language') ?? inject(LocaleService).language();
         return lang === 'en' ? 'en-GB' : 'nl-NL';
       },
     },

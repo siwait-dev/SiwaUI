@@ -4,12 +4,10 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
-import {
-  LocaleService,
-  Language,
-} from '../../../../../projects/siwa-ui/src/lib/services/locale.service';
+import { Language } from '../../../../../projects/siwa-ui/src/lib/services/locale.service';
 import { NAV_GROUPS } from '../../../core/navigation/nav-config';
 import { AuthService } from '../../../core/services/auth.service';
+import { LocaleSettingsFacade } from '../../../core/store/locale-settings/locale-settings.facade';
 import { ThemeSettingsFacade } from '../../../core/store/theme-settings/theme-settings.facade';
 
 @Component({
@@ -19,10 +17,11 @@ import { ThemeSettingsFacade } from '../../../core/store/theme-settings/theme-se
   styleUrl: './topbar.component.scss',
 })
 export class TopbarComponent {
-  protected readonly localeService = inject(LocaleService);
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AuthService);
+  private readonly localeSettingsFacade = inject(LocaleSettingsFacade);
   private readonly themeSettingsFacade = inject(ThemeSettingsFacade);
+  protected readonly language = this.localeSettingsFacade.language;
   protected readonly theme = this.themeSettingsFacade.theme;
   protected readonly layout = this.themeSettingsFacade.layout;
 
@@ -36,7 +35,7 @@ export class TopbarComponent {
    * Recomputed bij elke taalwissel zodat labels actueel blijven.
    */
   protected readonly adminMenuItems = computed<MenuItem[]>(() => {
-    this.localeService.language(); // reactieve afhankelijkheid
+    this.language(); // reactieve afhankelijkheid
     return NAV_GROUPS[1].items.map(item => ({
       label: this.translate.instant(item.labelKey),
       icon: item.icon,
@@ -46,7 +45,7 @@ export class TopbarComponent {
 
   // ── Gebruikersmenu (reactief vertaald) ──────────────────────────────────────
   readonly userMenuItems = computed<MenuItem[]>(() => {
-    this.localeService.language(); // reactieve afhankelijkheid
+    this.language(); // reactieve afhankelijkheid
     return [
       {
         label: this.translate.instant('NAV.PROFILE'),
@@ -73,6 +72,6 @@ export class TopbarComponent {
   }
 
   setLanguage(lang: Language): void {
-    this.localeService.setLanguage(lang);
+    this.localeSettingsFacade.setLanguage(lang);
   }
 }
