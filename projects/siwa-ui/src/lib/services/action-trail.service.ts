@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ACTION_TRAIL_MAX_ENTRIES } from '../constants/ui-runtime.constants';
 
 interface TrailEntry {
   timestamp: string;
@@ -7,12 +8,11 @@ interface TrailEntry {
 
 @Injectable({ providedIn: 'root' })
 export class ActionTrailService {
-  private readonly MAX_ENTRIES = 50;
   private trail: TrailEntry[] = [];
 
   record(action: string): void {
     this.trail.push({ timestamp: new Date().toISOString(), action });
-    if (this.trail.length > this.MAX_ENTRIES) {
+    if (this.trail.length > ACTION_TRAIL_MAX_ENTRIES) {
       this.trail.shift();
     }
   }

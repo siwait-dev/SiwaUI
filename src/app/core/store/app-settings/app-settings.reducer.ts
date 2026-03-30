@@ -1,6 +1,7 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { AppSettingsActions } from './app-settings.actions';
 import { AppConfigDto, AppSettingsFeedback } from './app-settings.models';
+import { DEFAULT_IDLE_TIMEOUT_MINUTES } from '../../../../../projects/siwa-ui/src/lib/constants/ui-runtime.constants';
 
 export interface AppSettingsState {
   config: AppConfigDto;
@@ -12,7 +13,7 @@ export interface AppSettingsState {
 const defaultConfig: AppConfigDto = {
   appName: 'SiwaUI',
   idleTimeoutEnabled: true,
-  idleTimeoutMinutes: 30,
+  idleTimeoutMinutes: DEFAULT_IDLE_TIMEOUT_MINUTES,
 };
 
 const initialState: AppSettingsState = {

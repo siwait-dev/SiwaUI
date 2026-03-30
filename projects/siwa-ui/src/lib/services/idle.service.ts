@@ -1,5 +1,10 @@
 import { Injectable, NgZone, OnDestroy, signal, inject } from '@angular/core';
 import { Subject } from 'rxjs';
+import {
+  DEFAULT_IDLE_POLICY,
+  IDLE_ACTIVITY_EVENTS,
+  MINUTES_TO_MILLISECONDS,
+} from '../constants/ui-runtime.constants';
 
 export interface IdlePolicy {
   enabled: boolean;
@@ -11,12 +16,12 @@ export interface IdlePolicy {
 export class IdleService implements OnDestroy {
   private readonly zone = inject(NgZone);
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private policy: IdlePolicy = { enabled: false, userCanDisable: true, timeoutMinutes: 30 };
+  private policy: IdlePolicy = { ...DEFAULT_IDLE_POLICY };
 
   readonly isIdle = signal(false);
   readonly onTimeout = new Subject<void>();
 
-  private readonly events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+  private readonly events = IDLE_ACTIVITY_EVENTS;
   private readonly boundReset = () => this.reset();
 
   configure(policy: IdlePolicy): void {
@@ -53,15 +58,12 @@ export class IdleService implements OnDestroy {
     this.isIdle.set(false);
     if (this.timer) clearTimeout(this.timer);
     this.zone.runOutsideAngular(() => {
-      this.timer = setTimeout(
-        () => {
-          this.zone.run(() => {
-            this.isIdle.set(true);
-            this.onTimeout.next();
-          });
-        },
-        this.policy.timeoutMinutes * 60 * 1000,
-      );
+      this.timer = setTimeout(() => {
+        this.zone.run(() => {
+          this.isIdle.set(true);
+          this.onTimeout.next();
+        });
+      }, this.policy.timeoutMinutes * MINUTES_TO_MILLISECONDS);
     });
   }
 

@@ -13,6 +13,8 @@ import { TagModule } from 'primeng/tag';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
 import { UserDto } from '../../../core/store/users/users.models';
 import { UsersFacade } from '../../../core/store/users/users.facade';
+import { USERS_PAGE_SIZE } from '../../../core/constants/paging.constants';
+import { USER_SEARCH_DEBOUNCE_MS } from '../../../core/constants/timing.constants';
 
 @Component({
   selector: 'app-users',
@@ -269,7 +271,7 @@ export class UsersComponent implements OnInit {
   protected detailsDialogVisible = false;
   protected searchValue = '';
   protected selectedStatus: boolean | null = null;
-  protected pageSize = 10;
+  protected pageSize = USERS_PAGE_SIZE;
   private currentPage = 1;
   private searchTimeout?: ReturnType<typeof setTimeout>;
 
@@ -293,7 +295,10 @@ export class UsersComponent implements OnInit {
 
   protected onSearch(): void {
     clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => this.usersFacade.setSearch(this.searchValue), 300);
+    this.searchTimeout = setTimeout(
+      () => this.usersFacade.setSearch(this.searchValue),
+      USER_SEARCH_DEBOUNCE_MS,
+    );
   }
 
   protected onStatusFilterChange(): void {

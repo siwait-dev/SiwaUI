@@ -1,3 +1,5 @@
+import { JWT_EXPIRY_SKEW_SECONDS, SECONDS_TO_MILLISECONDS } from '../../constants/timing.constants';
+
 export interface UserClaims {
   sub: string;
   email: string;
@@ -39,5 +41,5 @@ export function isTokenExpired(token: string): boolean {
   const claims = decodeJwt(token);
   if (!claims) return true;
 
-  return Date.now() / 1000 > claims.exp - 5;
+  return Date.now() / SECONDS_TO_MILLISECONDS > claims.exp - JWT_EXPIRY_SKEW_SECONDS;
 }

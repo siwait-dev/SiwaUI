@@ -1,6 +1,7 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { UsersActions } from './users.actions';
 import { UserDto } from './users.models';
+import { DEFAULT_PAGE_NUMBER, USERS_PAGE_SIZE } from '../../constants/paging.constants';
 
 export interface UsersState {
   items: UserDto[];
@@ -20,8 +21,8 @@ const initialState: UsersState = {
   items: [],
   totalCount: 0,
   loading: true,
-  page: 1,
-  pageSize: 10,
+  page: DEFAULT_PAGE_NUMBER,
+  pageSize: USERS_PAGE_SIZE,
   search: '',
   isActive: null,
   allRoles: [],
@@ -57,12 +58,12 @@ export const usersFeature = createFeature({
     on(UsersActions.setSearch, (state, { search }) => ({
       ...state,
       search,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(UsersActions.setStatusFilter, (state, { isActive }) => ({
       ...state,
       isActive,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(UsersActions.setPage, (state, { page, pageSize }) => ({
       ...state,

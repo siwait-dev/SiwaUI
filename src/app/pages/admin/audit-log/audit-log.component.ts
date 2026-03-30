@@ -11,6 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { AuditLogDto } from '../../../core/store/audit-log/audit-log.models';
 import { AuditLogFacade } from '../../../core/store/audit-log/audit-log.facade';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
+import { ADMIN_LOGS_PAGE_SIZE } from '../../../core/constants/paging.constants';
 
 @Component({
   selector: 'app-audit-log',
@@ -210,7 +211,7 @@ export class AuditLogComponent implements OnInit {
   protected filterFrom = '';
   protected filterTo = '';
   protected detailsDialogVisible = false;
-  protected pageSize = 50;
+  protected pageSize = ADMIN_LOGS_PAGE_SIZE;
   private currentPage = 1;
 
   readonly methodOptions = [

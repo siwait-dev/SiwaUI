@@ -11,6 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { ClientLogDto } from '../../../core/store/log-viewer/log-viewer.models';
 import { LogViewerFacade } from '../../../core/store/log-viewer/log-viewer.facade';
 import { SiwaDatePipe } from '../../../../../projects/siwa-ui/src/lib/pipes/siwa-date.pipe';
+import { ADMIN_LOGS_PAGE_SIZE } from '../../../core/constants/paging.constants';
 
 @Component({
   selector: 'app-log-viewer',
@@ -245,7 +246,7 @@ export class LogViewerComponent implements OnInit {
   protected filterFrom = '';
   protected filterTo = '';
   protected detailsDialogVisible = false;
-  protected pageSize = 50;
+  protected pageSize = ADMIN_LOGS_PAGE_SIZE;
 
   readonly levelOptions = [
     { label: 'Debug', value: 'debug' },

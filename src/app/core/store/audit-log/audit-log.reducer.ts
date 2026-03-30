@@ -1,6 +1,7 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { AuditLogActions } from './audit-log.actions';
 import { AuditLogDto } from './audit-log.models';
+import { ADMIN_LOGS_PAGE_SIZE, DEFAULT_PAGE_NUMBER } from '../../constants/paging.constants';
 
 export interface AuditLogState {
   logs: AuditLogDto[];
@@ -19,8 +20,8 @@ const initialState: AuditLogState = {
   logs: [],
   totalCount: 0,
   loading: true,
-  page: 1,
-  pageSize: 50,
+  page: DEFAULT_PAGE_NUMBER,
+  pageSize: ADMIN_LOGS_PAGE_SIZE,
   method: null,
   email: '',
   path: '',
@@ -51,23 +52,23 @@ export const auditLogFeature = createFeature({
     on(AuditLogActions.setMethodFilter, (state, { method }) => ({
       ...state,
       method,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(AuditLogActions.setEmailFilter, (state, { email }) => ({
       ...state,
       email,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(AuditLogActions.setPathFilter, (state, { path }) => ({
       ...state,
       path,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(AuditLogActions.setDateRange, (state, { from, to }) => ({
       ...state,
       from,
       to,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(AuditLogActions.clearFilters, state => ({
       ...state,
@@ -76,7 +77,7 @@ export const auditLogFeature = createFeature({
       path: '',
       from: '',
       to: '',
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(AuditLogActions.setPage, (state, { page, pageSize }) => ({
       ...state,

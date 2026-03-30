@@ -1,6 +1,7 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { LogViewerActions } from './log-viewer.actions';
 import { ClientLogDto } from './log-viewer.models';
+import { ADMIN_LOGS_PAGE_SIZE, DEFAULT_PAGE_NUMBER } from '../../constants/paging.constants';
 
 export interface LogViewerState {
   logs: ClientLogDto[];
@@ -19,8 +20,8 @@ const initialState: LogViewerState = {
   logs: [],
   totalCount: 0,
   loading: true,
-  page: 1,
-  pageSize: 50,
+  page: DEFAULT_PAGE_NUMBER,
+  pageSize: ADMIN_LOGS_PAGE_SIZE,
   level: null,
   userId: '',
   correlationId: '',
@@ -51,23 +52,23 @@ export const logViewerFeature = createFeature({
     on(LogViewerActions.setLevelFilter, (state, { level }) => ({
       ...state,
       level,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(LogViewerActions.setUserFilter, (state, { userId }) => ({
       ...state,
       userId,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(LogViewerActions.setCorrelationFilter, (state, { correlationId }) => ({
       ...state,
       correlationId,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(LogViewerActions.setDateRange, (state, { from, to }) => ({
       ...state,
       from,
       to,
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(LogViewerActions.clearFilters, state => ({
       ...state,
@@ -76,7 +77,7 @@ export const logViewerFeature = createFeature({
       correlationId: '',
       from: '',
       to: '',
-      page: 1,
+      page: DEFAULT_PAGE_NUMBER,
     })),
     on(LogViewerActions.setPage, (state, { page, pageSize }) => ({
       ...state,
